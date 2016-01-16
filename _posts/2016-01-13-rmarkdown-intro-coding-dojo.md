@@ -7,9 +7,10 @@ tags: [servr]
 
 It's been a while that people come to the Rcoding Dojo and create rmarkdown which are stocked on the coding dojo repository.
 
-Recently, the trio jekyll + Github + rmarkdown for blogging had became really popular, with web sites like [Yihui repo](https://github.com/yihui/knitr-jekyll), [Brendan Rocks](http://brendanrocks.com/blogging-with-rmarkdown-knitr-jekyll/) or [data-labborer.eu](data-laborer.eu) (that one is mine). In my opinion for three reasons: it's free, allow dynamic content and when set up, it's as simple as creating a rmarkdown.
+Recently, the trio jekyll + Github + rmarkdown for blogging had became really popular, with the creation of the 'servr::jekyll()' function. Exemple, web sites like [Yihui repo](https://github.com/yihui/knitr-jekyll), [Brendan Rocks](http://brendanrocks.com/blogging-with-rmarkdown-knitr-jekyll/) or [data-labborer.eu](data-laborer.eu) (that one is mine). In my opinion for three reasons: it's free, allow dynamic content and when set up, it's as simple as creating a rmarkdown.
 
 All in all, these elements gave us the idea to create a website for our monthly r session, the coding dojo.
+The set up is really easy, as we just take Yihui's script as the base of the website.
 
 As far as I am aware of, this is the __first r-based website multi-authors and totally open source__. True story.
 
@@ -84,7 +85,7 @@ In the case of an already knitted script, copy the header in the html script.
 
 ### Push the file to github
 
-When the rmarkdown file is ready and set, clone/synchronised the coding dojo repository, and push your .rmd script on the folder `_source`. ( [here](https://github.com/London-R-Dojo/Dojo-repo))
+When the rmarkdown file is ready and set, clone/synchronised the coding dojo repository, and push your .rmd script on the folder `_source`. ( [here](https://github.com/London-R-Dojo/london-r-dojo.github.io/tree/master/_source))
 
 If you push an html file or a .md file, push it on the `_posts` folder.
 
@@ -99,12 +100,12 @@ To generate the static website, the process is the following:
  - Install jekyll on your laptop.
  - Install r and rstudio on your laptop.
  - Install the `servr` package on your r session.
- - Clone the github repository of the coding dojo, [here](https://github.com/London-R-Dojo/Dojo-repo).
+ - Clone the github repository of the coding dojo, [here](https://github.com/London-R-Dojo/london-r-dojo.github.io).
  - On the root folder of the web site, run `servr::jekyll()`.
  - QA the site in `_site`.
  - Push and synchronise the github repo.
 
-For more information, the r function jekyll is better explained by [Yihui Xie](http://yihui.name/knitr-jekyll/2014/09/jekyll-with-knitr.html) and the jekyll process and customisation by the [jekyll documentation](http://jekyllrb.com/). 
+For more information, the r function jekyll is better explained by the creator [Yihui Xie](http://yihui.name/knitr-jekyll/2014/09/jekyll-with-knitr.html) and the jekyll process and customisation by the [jekyll documentation](http://jekyllrb.com/). 
 
 ## Github administrator
 
