@@ -1,0 +1,91 @@
+---
+layout: post
+title: "Exploration of text Clustering"
+categories: [Clustering]
+tags: [levenshtein distance]
+---
+
+Our issue tonight is how to cluster text which have near match.
+At disposition, we have a dataset of companies with the term edf inside. Our goal is to find function and ways to cluster altogether the same companies which had been entered with different names. It is a wide subject and to narrow it, we only look at the two functions, `agrep` and `adist`, which implement the Levenshtein distance.
+
+## Initialisation
+
+```{r, echo = F}
+# path
+path <- "C:/YCR Perso/opencorporates/"
+```
+
+Load the data:
+
+```{r setup, include=FALSE}
+load(file = paste0(path, "DATA/res_oc_edf.rda")) # res.oc
+```
+
+We attach the libraries.
+
+```{r, warning=FALSE, result = 'hide'}
+library(Ropencorporate, quietly = T)
+library(data.table)
+library(stringr)
+library(DT)
+```
+
+## Data description
+
+The dataset is a set of companies name and descriptions, all related to EDF, obtained in that [article](http://data-laborer.eu/2016/05/Presentation_of_the_Ropencorporate_package.html).
+
+We use the package `DT` to get an overview:
+
+```{r}
+oc.dt <- res.oc$oc.dt[, list(.N), by = "name"]
+
+datatable(oc.dt, options = list(pageLength = 10))
+```
+
+## First try: agrep
+
+The function `agrep` allow to do approximate match.
+We create a matrix of match and count for each name of companies, the number of times we could find a valuable match.
+
+```{r}
+# create the matrix of matchs
+res <- matrix(NA, nrow = length(oc.dt[, name]), ncol = length(oc.dt[, name]))
+for(idx in 1:length(oc.dt[, name])){
+  res[, idx] <- agrepl(oc.dt[idx, name], oc.dt[, name])
+}
+
+res.sum <- apply(res, 2, sum)
+res.sel.pos <- which(res.sum > 1)
+
+```
+
+The result is displayed in a datatable format as well.
+
+```{r}
+
+datatable(data.frame(name = oc.dt[res.sel.pos, name]
+   , freq = res.sum[res.sel.pos], stringsAsFactors = T))
+
+```
+
+Our first result is nice and give for each name the number of fuzzy match.
+
+## Second try: adist
+
+The function `adist` allows to create a matrix of distance between names.
+
+From the moment we have a matrix of distance, it is possible to do an hierachical clustering.
+
+```{r, fig.height=25, fig.width=15}
+n <- 75
+d <- adist(x = oc.dt[1:n, name], y = oc.dt[1:n, name])
+rownames(d) <- oc.dt[1:n, name]
+hc <- hclust(as.dist(d))
+
+```
+
+The dendogram is nice to plot, showing the similarities from a wide point of view, as we include in the same graph up to 75 names.
+
+```{r}
+plot(hc)
+```
