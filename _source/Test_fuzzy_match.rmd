@@ -12,13 +12,13 @@ At disposition, we have a dataset of companies with the term edf inside. Our goa
 
 ```{r, echo = F}
 # path
-path <- "C:/YCR Perso/opencorporates/"
+path <- "C:/Statistique/coding dojo/london-r-dojo.github.io/"
 ```
 
 Load the data:
 
 ```{r setup, include=FALSE}
-load(file = paste0(path, "DATA/res_oc_edf.rda")) # res.oc
+load(file = paste0(path, "data/res_oc_edf.rda")) # res.oc
 ```
 
 We attach the libraries.
