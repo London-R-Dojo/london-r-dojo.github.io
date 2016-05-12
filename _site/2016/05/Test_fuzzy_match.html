@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Exploration of text Clustering</title>
+    <meta name="description" content="London R coding dojo blog.
+">
+
+    <link rel="stylesheet" href="https://london-r-dojo.github.io/css/main.css">
+    <link rel="canonical" href="http://www.meetup.com/LondonR/https://london-r-dojo.github.io/2016/05/Test_fuzzy_match.html">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="https://london-r-dojo.github.io/">London R-Dojo Blog</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="https://london-r-dojo.github.io/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Exploration of text Clustering</h1>
+    <p class="post-meta">May 11, 2016</p>
+  </header>
+
+  <article class="post-content">
+    <p>Our issue tonight is how to cluster text which have near match.
+At disposition, we have a dataset of companies with the term edf inside. Our goal is to find function and ways to cluster altogether the same companies which had been entered with different names. It is a wide subject and to narrow it, we only look at the two functions, <code class="highlighter-rouge">agrep</code> and <code class="highlighter-rouge">adist</code>, which implement the Levenshtein distance.</p>
+
+<h2 id="initialisation">Initialisation</h2>
+
+<p>Load the data:</p>
+
+<p>We attach the libraries.</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="n">Ropencorporate</span><span class="p">,</span> <span class="n">quietly</span> <span class="o">=</span> <span class="n">T</span><span class="p">)</span>
+<span class="n">library</span><span class="p">(</span><span class="n">data.table</span><span class="p">)</span>
+<span class="n">library</span><span class="p">(</span><span class="n">stringr</span><span class="p">)</span>
+<span class="n">library</span><span class="p">(</span><span class="n">DT</span><span class="p">)</span></code></pre></figure>
+
+<h2 id="data-description">Data description</h2>
+
+<p>The dataset is a set of companies name and descriptions, all related to EDF, obtained in that <a href="http://data-laborer.eu/2016/05/Presentation_of_the_Ropencorporate_package.html">article</a>.</p>
+
+<p>We use the package <code class="highlighter-rouge">DT</code> to get an overview:</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">oc.dt</span> <span class="o">&lt;-</span> <span class="n">res.oc</span><span class="o">$</span><span class="n">oc.dt</span><span class="p">[,</span> <span class="n">list</span><span class="p">(</span><span class="n">.N</span><span class="p">),</span> <span class="n">by</span> <span class="o">=</span> <span class="s2">"name"</span><span class="p">]</span>
+
+<span class="n">datatable</span><span class="p">(</span><span class="n">oc.dt</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">list</span><span class="p">(</span><span class="n">pageLength</span> <span class="o">=</span> <span class="m">10</span><span class="p">))</span></code></pre></figure>
+
+<!--html_preserve-->
+<div id="htmlwidget-5496" style="width:100%;height:auto;" class="datatables"></div>
+<script type="application/json" data-for="htmlwidget-5496">{
+  "x": {
+    "data": [
+      ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "100", "101", "102", "103", "104", "105", "106", "107", "108", "109", "110", "111", "112", "113", "114", "115", "116", "117", "118", "119", "120", "121", "122", "123", "124", "125", "126", "127", "128", "129", "130", "131", "132", "133", "134", "135", "136", "137", "138", "139", "140", "141", "142", "143", "144", "145", "146", "147", "148", "149", "150", "151", "152", "153", "154", "155", "156", "157", "158", "159", "160", "161", "162", "163", "164", "165", "166", "167", "168", "169", "170", "171", "172", "173", "174", "175", "176", "177", "178", "179", "180", "181", "182", "183", "184", "185", "186", "187", "188", "189", "190", "191", "192", "193", "194", "195", "196", "197", "198", "199", "200", "201", "202", "203", "204", "205", "206", "207", "208", "209", "210", "211", "212", "213", "214", "215", "216", "217", "218", "219", "220", "221", "222", "223", "224", "225", "226", "227", "228", "229", "230", "231", "232", "233", "234", "235", "236", "237", "238", "239", "240", "241", "242", "243", "244", "245", "246", "247", "248", "249", "250", "251", "252", "253", "254", "255", "256", "257", "258", "259", "260", "261", "262", "263", "264", "265", "266", "267", "268", "269", "270", "271", "272", "273", "274", "275", "276", "277", "278", "279", "280", "281", "282", "283", "284", "285", "286", "287", "288", "289", "290", "291", "292", "293", "294", "295", "296", "297", "298", "299", "300", "301", "302", "303", "304", "305", "306", "307", "308", "309", "310", "311", "312", "313", "314", "315", "316", "317", "318", "319", "320", "321", "322", "323", "324", "325", "326", "327", "328", "329", "330", "331", "332", "333", "334", "335", "336", "337", "338", "339", "340", "341", "342", "343", "344", "345", "346", "347", "348", "349", "350", "351", "352", "353", "354", "355", "356", "357", "358", "359", "360", "361", "362", "363", "364", "365", "366", "367", "368", "369", "370", "371", "372", "373", "374", "375", "376", "377", "378", "379", "380", "381", "382", "383", "384", "385", "386", "387", "388", "389", "390", "391", "392", "393", "394", "395", "396", "397", "398", "399", "400", "401", "402", "403", "404", "405", "406", "407", "408", "409", "410", "411", "412", "413", "414", "415", "416", "417", "418", "419", "420", "421", "422", "423", "424", "425", "426", "427", "428", "429", "430", "431", "432"],
+      ["\"EDF ENGINEERING SRL\"", "\"EDF TRADING LIMITED LONDON SUCURSALA BUCURESTI\"", "\"EDF Énergies Nouvelles Belgium\" en abrégé \"EDF EN Belgium\"", "\"EDF\" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ", "128 EDF, LLC", "1405940 NOVA SCOTIA LIMITED", "3235432 CANADA INC.", "9189-0558 QUÉBEC INC.", "9200-6881 QUÉBEC INC.", "ALPHA REPROGRAPHIC SERVICES, INC.", "AMERADA COMMUNICATIONS LIMITED", "AMHERST EDF, LLC", "BECK BURN WINDFARM LIMITED", "BLOOMFIELD APARTMENTS, LLC", "BMR PROPERTY SOLUTIONS LIMITED", "BOUNDARY LANE WINDFARM LIMITED", "BRAEMORE WOOD WINDFARM LIMITED", "BRITISH ENERGY GENERATION LIMITED", "BRITISH ENERGY GROUP LIMITED", "BROOKRIDGE EDF HOUSING INVESTORS, L.P.", "CASA DE SCHIMB VALUTAR E D F ASRO SRL", "CHELSEA EDF PARKWAY, LLC", "CONSTRUCTION EDF INC.", "CONTRACT FINANCIAL, LLC", "CORRIEMOILLIE WINDFARM LIMITED", "Coastal EDF, Inc.", "DANIEL FRADETTE", "DESIGN2C v/Ellen Dahl Frederiksen", "DÉVELOPPEMENT EDF EN CANADA INC.", "E D F ADVERTISING, INC.", "E D F ASSOCIATES, INC.", "E D F BUSINESS CLUB INC.", "E D F CONSTRUCTION INC.", "E D F ENTERPRISES, INC.", "E D F FARM &amp; FEEDERS, INC.", "E D F MAN ESPAÑA SA", "E D F SA", "E D F TRADING LIMITED", "E D F WATERTOWN, INC.", "E D F, L.L.C.", "E. D. F. LIMITED", "E. D. F. LIMITED, INC.", "E. D. F. MULTI SERVICES &amp; CARGO INC.", "E. D. F. RESOURCES, INC.", "E. D. F. VENTURES, INC.", "E. D. F., INC.", "E.D.F Remodeling Inc.", "E.D.F TRADING", "E.D.F.", "E.D.F. (AUSTRALIA) PTY LTD", "E.D.F. ASSOCIÉS", "E.D.F. CONCRETE, INC.", "E.D.F. CONSTRUCTION, INC.", "E.D.F. DESIGN &amp; CONSTRUCTION, INC.", "E.D.F. ECONOMIE", "E.D.F. ENGINEERING LIMITED", "E.D.F. ENTERPRISES, INC.", "E.D.F. FASHIONS, INC.", "E.D.F. FISHERIES LIMITED", "E.D.F. HOLDING CORP.", "E.D.F. INCORPORATED", "E.D.F. INDUSTRIES, INC.", "E.D.F. LLC", "E.D.F. MANAGEMENT CORPORATION", "E.D.F. MARKETING, INC.", "E.D.F. MEN, TRGOVINA, PROIZVODNJA, STORITVE, D.O.O.", "E.D.F. PAINTING, LLC", "E.D.F. PROPERTIES, LLC", "E.D.F. REALTY CORP.", "E.D.F. RESOURCES, INC.", "E.D.F. Remodeling Inc.", "E.D.F. WATERFORD, LLC", "E.D.F. WIND FARM SRL", "E.D.F., COMPANY, INCORPORATED", "E.D.F., INC.", "E.D.F., LLC", "EASTERN POWER NETWORKS PLC", "ECOLE DANSE FORMATION DE L'ESTRIE INC.", "EDF", "EDF &amp; ASSOCIATES INC.", "EDF &amp; ASSOCIATES, INC.", "EDF &amp; Associates Consulting, LLC", "EDF (PROPERTIES) LIMITED", "EDF (SERVICES) LIMITED", "EDF (SKY SERVICES) LIMITED", "EDF (USA), INC.", "EDF (VIETNAM) LIMITED", "EDF + SPACE PLANNERS PTE. LTD.", "EDF - EXPERT DEALING FINANCING", "EDF - PROGRESS INCORPORATED", "EDF 2 INC.", "EDF 2005 GP INC.", "EDF 2005 GP Inc.", "EDF ABACEBISI", "EDF ACQUISITION COMPANY, INC.", "EDF ADVISORS LLC", "EDF AIR CONDITIONING LIMITED", "EDF AMERICAS FINANCE CO., LLC", "EDF ANSTALT", "EDF ARSENAL WATERTOWN HOLDINGS, LLC", "EDF ASRO SRL", "EDF ASSOCIATES LIMITED", "EDF AVIATION LLC", "EDF B.V.", "EDF BELGIUM", "EDF BENELUX BV", "EDF BUILDERS INCORPORATED", "EDF Beheer B.V.", "EDF Benelux B.V.", "EDF CAPITAL, LLC", "EDF COLLECTION MANAGEMENT NETWORK LTD", "EDF COLLECTION SERVICES NETWORK LTD", "EDF COLLECTIONS LTD", "EDF COMMUNICATION PRODUCTS, INC.", "EDF COMMUNICATIONS LLC", "EDF COMMUNICATIONS, INC.", "EDF COMPANY INC", "EDF COMPANY, LLC", "EDF CONCEPTS LIMITED", "EDF CONSORTIUM, LLC", "EDF CONSTRUCTIONS PTY LIMITED", "EDF CONSULTANTS LIMITED", "EDF CONSULTANTS, INC.", "EDF CONSULTING", "EDF CONSULTING GROUP LIMITED", "EDF CONSULTING LLC", "EDF CONSULTING SA", "EDF CONSULTING, INC.", "EDF CONTRACTING, LLC", "EDF CORP.", "EDF Consulting", "EDF DANCE STUDIO LIMITED", "EDF DANVERS HOLDINGS, LLC", "EDF DANVERS II, LLC", "EDF DANVERS, LLC", "EDF DATAPRODUKTER HANDELSBOLAG", "EDF DESIGNS, INC.", "EDF DEVELOPMENT COMPANY LIMITED", "EDF DEVELOPMENT SA", "EDF DEVELOPMENT, INC.", "EDF DIN UK LIMITED", "EDF DIRECT PTY LIMITED", "EDF DISTRIBUTION INC.", "EDF DISTRIBUTORS AND DUTY FREE SHOPS LIMITED", "EDF DRESDEN LTD", "EDF ELECTRIC, INC.", "EDF EN CANADA DEVELOPMENT INC. - DÉVELOPPEMENT EDF EN CANADA INC.", "EDF EN CANADA INC.", "EDF EN Canada Distributed Solar GP Inc.", "EDF EN Canada Inc.", "EDF EN Canada Solar Arnprior A GP Inc.", "EDF EN Canada Solar Arnprior B GP Inc.", "EDF EN Canada Solar Smiths Falls A GP Inc.", "EDF EN Canada Solar Smiths Falls B GP Inc.", "EDF EN Canada Solar St. Isidore A GP Inc.", "EDF EN DENMARK A/S", "EDF EN OSTERILD ApS", "EDF EN POLSKA SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ", "EDF EN SERVICES UK LIMITED", "EDF EN SOUTH AFRICA", "EDF EN Services Belgium", "EDF EN UK LIMITED", "EDF ENERGIES NOUVELLES", "EDF ENERGY (CONTRACT SERVICES) LIMITED", "EDF ENERGY (COTTAM POWER) LIMITED", "EDF ENERGY (D1) LIMITED", "EDF ENERGY (D2) LIMITED", "EDF ENERGY (DORMANT HOLDINGS) LIMITED", "EDF ENERGY (ENERGY BRANCH) PLC", "EDF ENERGY (GAS STORAGE HOLE HOUSE) LIMITED", "EDF ENERGY (LONDON HEAT AND POWER) LIMITED", "EDF ENERGY (METRO HOLDINGS) LIMITED", "EDF ENERGY (NORTHERN OFFSHORE WIND) LIMITED", "EDF ENERGY (PROJECTS) LIMITED", "EDF ENERGY (SOUTH EAST GENERATION) LIMITED", "EDF ENERGY (UK) LIMITED", "EDF ENERGY (WEST BURTON POWER) LIMITED", "EDF ENERGY 1 LIMITED", "EDF ENERGY CUSTOMER FIELD SERVICES (DATA) LIMITED", "EDF ENERGY CUSTOMER FIELD SERVICES (METERING) LIMITED", "EDF ENERGY CUSTOMERS PLC", "EDF ENERGY DISTRIBUTION FUND LIMITED", "EDF ENERGY ESPS TRUSTEE LIMITED", "EDF ENERGY FLEET SERVICES LIMITED", "EDF ENERGY GB LIMITED", "EDF ENERGY GROUP HOLDINGS PLC", "EDF ENERGY HOLDINGS LIMITED", "EDF ENERGY HOMEPHONE LIMITED", "EDF ENERGY INVESTMENTS", "EDF ENERGY LAKE LIMITED", "EDF ENERGY NUCLEAR GENERATION GROUP LIMITED", "EDF ENERGY NUCLEAR GENERATION LIMITED", "EDF ENERGY PENSION SCHEME TRUSTEE LIMITED", "EDF ENERGY PLC", "EDF ENERGY POWER SYSTEMS (EASTERN) LIMITED", "EDF ENERGY POWER SYSTEMS (LONDON) LIMITED", "EDF ENERGY POWER SYSTEMS (SOUTH EASTERN) LIMITED", "EDF ENERGY POWERCOM SYSTEMS (LONDON) LIMITED", "EDF ENERGY PROPERTY SERVICES LIMITED", "EDF ENERGY R&amp;D UK CENTRE LIMITED", "EDF ENERGY RENEWABLES HOLDINGS LIMITED", "EDF ENERGY RENEWABLES LIMITED", "EDF ENERGY ROUND 3 ISLE OF WIGHT LIMITED", "EDF ENERGY SERVICES LIMITED LIABILITY COMPANY", "EDF ENERGY SERVICES, LLC", "EDF ENGINEERING UND DESIGN IM FAHRZEUGBAU LTD", "EDF ENTERPRISES DW LLC", "EDF ENTERPRISES GV, LLC", "EDF ENTERPRISES HOLDING, LLC", "EDF ENTERPRISES LIMITED LIABILITY COMPANY", "EDF ENTERPRISES PTY LTD", "EDF ENTERPRISES, BX, LLC", "EDF ENTERPRISES, INC.", "EDF ENTERPRISES, LLC", "EDF ENTERPRISES, UA, LLC", "EDF ESTATICA Y DINAMICA DE FLUIDOS SA", "EDF EURO AMERICANA", "EDF EURO-DOMUS-FINANZ S.A.", "EDF EXCELSIOR LLC", "EDF Energy (NNB) Limited", "EDF Energy Services, LLC", "EDF Express", "EDF FARMS LLC", "EDF FILTER SOLUTIONS LIMITED", "EDF FINANCE MANAGEMENT NETWORK LTD", "EDF FINANCIAL CONCEPTS, INC.", "EDF FINANCING CORP.", "EDF FLOWERS L.L.C.", "EDF GROUP INC", "EDF GROUP, LLC", "EDF HOLDCO LLC", "EDF HOLDING ApS", "EDF HOLDING CO. LIMITED", "EDF HOLDING CO.,LTD.", "EDF HOLDINGS (USA) INC.", "EDF HOLDINGS PTY LIMITED", "EDF HOLDINGS, LLC", "EDF INC.", "EDF INC. WHICH WILL DO BUSINESS IN CALIFORNIA AS EDF POWER INC.", "EDF INDUSTRIAL POWER SERVICES (CA) LLC", "EDF INDUSTRIAL POWER SERVICES (CA), LLC", "EDF INDUSTRIAL POWER SERVICES (IL), LLC", "EDF INDUSTRIAL POWER SERVICES (NY), LLC", "EDF INDUSTRIAL POWER SERVICES (OH), LLC", "EDF INTERNATIONAL PTE. LTD.", "EDF INVESTISSEMENTS GROUPE", "EDF INVESTMENT PARTNERS, L.L.C.", "EDF INVESTMENTS LLC", "EDF INVESTMENTS LLP", "EDF INVESTMENTS PTY LIMITED", "EDF INVESTMENTS SL", "EDF INVESTMENTS, LLC", "EDF INVESTORS GROUP, L.L.C.", "EDF INVESTORS, L.L.C.", "EDF INVESTORS, LLC", "EDF IONEL PERLEA RESIDENCE LIMITED", "EDF ISLAMABAD (PRIVATE) LIMITED", "EDF Inc.", "EDF International (Europe Déménagements Fournitures International)", "EDF JUICES PRIVATE LIMITED", "EDF LAB SINGAPORE PTE. LTD.", "EDF LANCASTER SOLAR LLC", "EDF LEISURE LTD", "EDF LEPOMIS SOLAR LLC", "EDF LIMITED", "EDF LLC", "EDF LOGITECH SRL", "EDF LONDON CAPITAL, L.P.", "EDF LONDON HOLDINGS", "EDF LONDON LIMITED", "EDF LTD.", "EDF LUMINAIRES", "EDF LUXURY DESIGNS, INC.", "EDF Luminus", "EDF Luminus Wind Together", "EDF MANAGEMENT, LLC", "EDF MANTON AVENUE, LLC", "EDF MASS AVE, LLC", "EDF MASSACHUSETTS SOLAR HOLDINGS, LLC", "EDF MASSACHUSETTS SPONSOR MEMBER, LLC", "EDF MEDICAL P.C.", "EDF MIDDLETOWN, LLC", "EDF Management, LLC", "EDF Manton Avenue, LLC", "EDF NC SOLAR, LLC", "EDF NETWORK LLC", "EDF NORTH DARTMOUTH I, INC.", "EDF NORTH DARTMOUTH I, LLC", "EDF NORTH DARTMOUTH II, LLC", "EDF NORTH DARTMOUTH, LLC", "EDF NUCLEAR LLC", "EDF OCEANTRANSPORT INC.", "EDF PARENT BOOSTER", "EDF PARTNERS, L.P.", "EDF PENINSULA IBERICA SL", "EDF POLSKA CENTRALA SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ", "EDF POLSKA CUW SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ", "EDF PORTSMOUTH, LLC", "EDF POWER INC.", "EDF PRODUCTS, INC.", "EDF PROPERTIES, LLC", "EDF PROPERTY SOLUTIONS, LLC", "EDF PTY LIMITED", "EDF PUB INC.", "EDF PV COMPANY SL", "EDF Partners, LLC", "EDF Partnership SCSp", "EDF Properties, LLC", "EDF Quality Consulting LLC", "EDF REALTY", "EDF REALTY INC.", "EDF RENDER SYSTEMS LIMITED", "EDF RENEWABLE ASSET HOLDINGS, INC.", "EDF RENEWABLE DEVELOPMENT, INC.", "EDF RENEWABLE DG SERVICES LLC", "EDF RENEWABLE EAST COAST, INC.", "EDF RENEWABLE ENERGY, INC.", "EDF RENEWABLE LAND HOLDINGS, INC.", "EDF RENEWABLE LFG HOLDINGS, LLC", "EDF RENEWABLE SERVICES INC.", "EDF RENEWABLE SERVICES, INC.", "EDF RENEWABLE SOLAR HOLDINGS, INC.", "EDF RENEWABLE WINDFARM I, INC.", "EDF RENEWABLE WINDFARM III, INC.", "EDF RENEWABLE WINDFARM IV, INC.", "EDF RENEWABLE WINDFARM V, INC.", "EDF RENEWABLE WINDFARM VI, INC.", "EDF RESEARCH INC.", "EDF RESOURCE CAPITAL, INC.", "EDF RESTORATION SERVICES, INC.", "EDF RIVERSIDE PLAZA, LLC", "EDF Renewable Asset Holdings, Inc.", "EDF Renewable Development, Inc.", "EDF Renewable LFG Holdings, LLC", "EDF Renewable Services", "EDF Renewable Services Inc.", "EDF Renewable Services, Inc.", "EDF Resource Capital, Inc.", "EDF Riverside Plaza, LLC", "EDF SALES &amp; MARKETING, INC.", "EDF SCARBOROUGH, LLC", "EDF SCHOOL OF DANCE &amp; ELITE DANCE FASHIONS, L.L.C.", "EDF SECURITY ENTERPRISES INC.", "EDF SEEKONK II, LLC", "EDF SEEKONK THREE, LLC", "EDF SEEKONK, LLC", "EDF SERVICES (PRIVATE.) LIMITED", "EDF SERVICES LIMITED", "EDF SERVICES LLC", "EDF SERVICES, INC.", "EDF SHIELD LIMITED", "EDF SOLAR ENERGY LTD", "EDF SOLAR I, LLC", "EDF SOLAR II, LLC", "EDF SOLAR SOCIEDAD LIMITADA", "EDF SOLUTIONS LIMITED", "EDF SOUTH EAST ASIA COMPAY LIMITED", "EDF SRL", "EDF SYSTEMS, INC.", "EDF Septen", "EDF Sitestreet", "EDF Sky EuroCore S.à r.l.", "EDF Sky GPF S.à r.l.", "EDF Sky KSH S.à r.l.", "EDF Sky S.à r.l.", "EDF Solutions", "EDF Solutions, LLC", "EDF TAX CONTRACTOR SUPPORT LIMITED", "EDF TAX DEFENCE LIMITED", "EDF TAX LIMITED", "EDF TAX PREMIER SUPPORT LIMITED", "EDF TECHNOLOGIES DE L'INFORMATION INC.", "EDF TECHNOLOGIES LLC", "EDF TEMPLE TERRACE, LLC", "EDF TERRACE RIDGE, LLC", "EDF TRADERS INC.", "EDF TRADING", "EDF TRADING AUSTRALIA PTY LIMITED", "EDF TRADING BIOENERGY LIMITED", "EDF TRADING ELECTRICIDAD Y GAS SL", "EDF TRADING HOLDINGS LLC", "EDF TRADING LIMITED", "EDF TRADING LIMITED NORSK AVDELING AV UTENLANDSK FORETAK", "EDF TRADING LTD", "EDF TRADING MARKETS LIMITED", "EDF TRADING NORTH AMERICA LIMITED LIABILITY COMPANY", "EDF TRADING NORTH AMERICA MANAGEMENT LLC", "EDF TRADING NORTH AMERICA, LLC", "EDF TRADING RESOURCES, LLC", "EDF TRADING SINGAPORE PTE. LIMITED", "EDF TRANSPORT", "EDF TRANSPORT LIMITED", "EDF TRANSPORT, INC.", "EDF TRANSPORTS INC.", "EDF TRUCK LLC", "EDF Technologies Limited", "EDF Teknik Aktiebolag", "EDF Trading Limited", "EDF Trading North America, LLC", "EDF Transport", "EDF UK FINANCE", "EDF VAPORS LLC", "EDF VENTURES I, LIMITED PARTNERSHIP", "EDF VENTURES II, LIMITED PARTNERSHIP", "EDF VENTURES III HEALTHCARE OPPORTUNITY FUND, LIMITED PARTNERSHIP", "EDF VENTURES III SIDECAR, LIMITED PARTNERSHIP", "EDF VENTURES III, LIMITED PARTNERSHIP", "EDF VENTURES OPPORTUNITY FUND, LIMITED PARTNERSHIP", "EDF VENTURES, LLC", "EDF WARWICK, LLC", "EDF WATERTOWN II, LLC", "EDF WATERTOWN, INC.", "EDF WATERTOWN, LLC", "EDF WEST, LLC", "EDF WESTBOROUGH, LLC", "EDF WINDUP CORPORATION", "EDF Warwick, LLC", "EDF Y GDF SL", "EDF, INC.", "EDF, INCORPORATED", "EDF, Inc.", "EDF, L.L.C.", "EDF, LLC", "EDF-ASSOCIATES, LLC", "EDF-Flexoprint", "EDF-M1 MANAGEMENT LLC", "EDF-M1 ONSHORE, L.P.", "EDF-MED (IMPORT &amp; DISTRIBUTION GROUP) LIMITED", "EDF-RE TEXAS DEVELOPMENT I, LLC", "EDF-RE TEXAS DEVELOPMENT II, LLC", "EDF-RE TEXAS DEVELOPMENT III, LLC", "EDF-RE US DEVELOPMENT, LLC"],
+      [1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10, 1, 1, 1, 1, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, 1, 1, 1, 2, 1, 1, 2, 3, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 18, 1, 2, 5, 2, 3, 1, 21, 1, 2, 2, 2, 2, 2, 1, 8, 1, 1, 1, 4, 2, 1, 2, 6, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 24, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 6, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 6, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1]
+    ],
+    "container": "<table class=\"display\">\n  <thead>\n    <tr>\n      <th> </th>\n      <th>name</th>\n      <th>N</th>\n    </tr>\n  </thead>\n</table>",
+    "options": {
+      "pageLength": 10,
+      "columnDefs": [
+        {
+          "orderable": false,
+          "targets": 0
+        },
+        {
+          "className": "dt-right",
+          "targets": 2
+        }
+      ],
+      "order": [],
+      "autoWidth": false
+    },
+    "callback": "function(table) {\nreturn table;\n}",
+    "filter": "none"
+  },
+  "evals": ["callback"]
+}</script>
+<!--/html_preserve-->
+
+<h2 id="first-try-agrep">First try: agrep</h2>
+
+<p>The function <code class="highlighter-rouge">agrep</code> allow to do approximate match.
+We create a matrix of match and count for each name of companies, the number of times we could find a valuable match.</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="c1"># create the matrix of matchs
+</span><span class="n">res</span> <span class="o">&lt;-</span> <span class="n">matrix</span><span class="p">(</span><span class="n">NA</span><span class="p">,</span> <span class="n">nrow</span> <span class="o">=</span> <span class="n">length</span><span class="p">(</span><span class="n">oc.dt</span><span class="p">[,</span> <span class="n">name</span><span class="p">]),</span> <span class="n">ncol</span> <span class="o">=</span> <span class="n">length</span><span class="p">(</span><span class="n">oc.dt</span><span class="p">[,</span> <span class="n">name</span><span class="p">]))</span>
+<span class="k">for</span><span class="p">(</span><span class="n">idx</span> <span class="k">in</span> <span class="m">1</span><span class="o">:</span><span class="n">length</span><span class="p">(</span><span class="n">oc.dt</span><span class="p">[,</span> <span class="n">name</span><span class="p">])){</span>
+  <span class="n">res</span><span class="p">[,</span> <span class="n">idx</span><span class="p">]</span> <span class="o">&lt;-</span> <span class="n">agrepl</span><span class="p">(</span><span class="n">oc.dt</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">name</span><span class="p">],</span> <span class="n">oc.dt</span><span class="p">[,</span> <span class="n">name</span><span class="p">])</span>
+<span class="p">}</span>
+
+<span class="n">res.sum</span> <span class="o">&lt;-</span> <span class="n">apply</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="n">sum</span><span class="p">)</span>
+<span class="n">res.sel.pos</span> <span class="o">&lt;-</span> <span class="n">which</span><span class="p">(</span><span class="n">res.sum</span> <span class="o">&gt;</span> <span class="m">1</span><span class="p">)</span></code></pre></figure>
+
+<p>The result is displayed in a datatable format as well.</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">datatable</span><span class="p">(</span><span class="n">data.frame</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="n">oc.dt</span><span class="p">[</span><span class="n">res.sel.pos</span><span class="p">,</span> <span class="n">name</span><span class="p">]</span>
+   <span class="p">,</span> <span class="n">freq</span> <span class="o">=</span> <span class="n">res.sum</span><span class="p">[</span><span class="n">res.sel.pos</span><span class="p">],</span> <span class="n">stringsAsFactors</span> <span class="o">=</span> <span class="n">T</span><span class="p">))</span></code></pre></figure>
+
+<!--html_preserve-->
+<div id="htmlwidget-9162" style="width:100%;height:auto;" class="datatables"></div>
+<script type="application/json" data-for="htmlwidget-9162">{
+  "x": {
+    "data": [
+      ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "100", "101", "102", "103", "104", "105", "106", "107", "108", "109", "110", "111", "112", "113", "114", "115", "116", "117", "118", "119", "120", "121", "122"],
+      ["\"EDF\" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ", "DÉVELOPPEMENT EDF EN CANADA INC.", "E D F ASSOCIATES, INC.", "E D F ENTERPRISES, INC.", "E D F SA", "E D F TRADING LIMITED", "E D F WATERTOWN, INC.", "E D F, L.L.C.", "E. D. F. LIMITED", "E. D. F. RESOURCES, INC.", "E. D. F., INC.", "E.D.F Remodeling Inc.", "E.D.F TRADING", "E.D.F.", "E.D.F. ENTERPRISES, INC.", "E.D.F. LLC", "E.D.F. PROPERTIES, LLC", "E.D.F. RESOURCES, INC.", "E.D.F. Remodeling Inc.", "E.D.F., INC.", "E.D.F., LLC", "EDF", "EDF &amp; ASSOCIATES INC.", "EDF &amp; ASSOCIATES, INC.", "EDF (SERVICES) LIMITED", "EDF 2005 GP INC.", "EDF 2005 GP Inc.", "EDF ASRO SRL", "EDF COMMUNICATIONS LLC", "EDF CONSULTANTS, INC.", "EDF CONSULTING", "EDF CONSULTING SA", "EDF DEVELOPMENT SA", "EDF DEVELOPMENT, INC.", "EDF DIN UK LIMITED", "EDF EN CANADA INC.", "EDF EN Canada Solar Arnprior A GP Inc.", "EDF EN Canada Solar Arnprior B GP Inc.", "EDF EN Canada Solar Smiths Falls A GP Inc.", "EDF EN Canada Solar Smiths Falls B GP Inc.", "EDF EN UK LIMITED", "EDF ENERGY (D1) LIMITED", "EDF ENERGY (D2) LIMITED", "EDF ENERGY (UK) LIMITED", "EDF ENERGY 1 LIMITED", "EDF ENERGY GB LIMITED", "EDF ENERGY LAKE LIMITED", "EDF ENERGY PLC", "EDF ENERGY POWER SYSTEMS (LONDON) LIMITED", "EDF ENERGY POWERCOM SYSTEMS (LONDON) LIMITED", "EDF ENERGY SERVICES, LLC", "EDF ENTERPRISES DW LLC", "EDF ENTERPRISES GV, LLC", "EDF ENTERPRISES, BX, LLC", "EDF ENTERPRISES, INC.", "EDF ENTERPRISES, LLC", "EDF ENTERPRISES, UA, LLC", "EDF HOLDINGS, LLC", "EDF INC.", "EDF INDUSTRIAL POWER SERVICES (CA) LLC", "EDF INDUSTRIAL POWER SERVICES (CA), LLC", "EDF INDUSTRIAL POWER SERVICES (IL), LLC", "EDF INDUSTRIAL POWER SERVICES (NY), LLC", "EDF INDUSTRIAL POWER SERVICES (OH), LLC", "EDF INVESTMENTS LLC", "EDF INVESTMENTS LLP", "EDF INVESTMENTS SL", "EDF INVESTMENTS, LLC", "EDF INVESTORS, L.L.C.", "EDF INVESTORS, LLC", "EDF Inc.", "EDF LIMITED", "EDF LLC", "EDF Luminus", "EDF NORTH DARTMOUTH I, INC.", "EDF NORTH DARTMOUTH I, LLC", "EDF NORTH DARTMOUTH II, LLC", "EDF NORTH DARTMOUTH, LLC", "EDF POLSKA CUW SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ", "EDF POWER INC.", "EDF PTY LIMITED", "EDF REALTY", "EDF RENEWABLE LAND HOLDINGS, INC.", "EDF RENEWABLE SERVICES INC.", "EDF RENEWABLE SERVICES, INC.", "EDF RENEWABLE SOLAR HOLDINGS, INC.", "EDF RENEWABLE WINDFARM I, INC.", "EDF RENEWABLE WINDFARM III, INC.", "EDF RENEWABLE WINDFARM IV, INC.", "EDF RENEWABLE WINDFARM V, INC.", "EDF RENEWABLE WINDFARM VI, INC.", "EDF Renewable Services", "EDF Renewable Services Inc.", "EDF Renewable Services, Inc.", "EDF SERVICES LIMITED", "EDF SERVICES LLC", "EDF SERVICES, INC.", "EDF SOLAR I, LLC", "EDF SOLAR II, LLC", "EDF SOLUTIONS LIMITED", "EDF SRL", "EDF Solutions", "EDF TRADING", "EDF TRADING LIMITED", "EDF TRADING LTD", "EDF TRADING NORTH AMERICA, LLC", "EDF TRANSPORT", "EDF TRANSPORT, INC.", "EDF TRANSPORTS INC.", "EDF VENTURES I, LIMITED PARTNERSHIP", "EDF VENTURES II, LIMITED PARTNERSHIP", "EDF VENTURES III, LIMITED PARTNERSHIP", "EDF WATERTOWN II, LLC", "EDF WATERTOWN, INC.", "EDF WATERTOWN, LLC", "EDF, INC.", "EDF, Inc.", "EDF, L.L.C.", "EDF, LLC", "EDF-RE TEXAS DEVELOPMENT I, LLC", "EDF-RE TEXAS DEVELOPMENT II, LLC", "EDF-RE TEXAS DEVELOPMENT III, LLC"],
+      [4, 2, 2, 3, 7, 4, 2, 2, 2, 2, 2, 2, 17, 30, 3, 2, 2, 2, 2, 3, 4, 384, 2, 3, 2, 2, 2, 2, 2, 2, 7, 3, 2, 3, 2, 3, 2, 2, 2, 2, 2, 4, 3, 4, 2, 2, 2, 17, 2, 2, 2, 3, 5, 3, 4, 2, 3, 2, 5, 5, 5, 5, 5, 5, 4, 5, 5, 3, 2, 2, 3, 35, 4, 2, 2, 4, 4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 3, 2, 2, 3, 3, 2, 2, 2, 3, 7, 2, 17, 4, 4, 2, 4, 2, 2, 3, 3, 3, 2, 2, 2, 6, 3, 3, 4, 3, 3, 3]
+    ],
+    "container": "<table class=\"display\">\n  <thead>\n    <tr>\n      <th> </th>\n      <th>name</th>\n      <th>freq</th>\n    </tr>\n  </thead>\n</table>",
+    "options": {
+      "columnDefs": [
+        {
+          "orderable": false,
+          "targets": 0
+        },
+        {
+          "className": "dt-right",
+          "targets": 2
+        }
+      ],
+      "order": [],
+      "autoWidth": false
+    },
+    "callback": "function(table) {\nreturn table;\n}",
+    "filter": "none"
+  },
+  "evals": ["callback"]
+}</script>
+<!--/html_preserve-->
+
+<p>Our first result is nice and give for each name the number of fuzzy match.</p>
+
+<h2 id="second-try-adist">Second try: adist</h2>
+
+<p>The function <code class="highlighter-rouge">adist</code> allows to create a matrix of distance between names.</p>
+
+<p>From the moment we have a matrix of distance, it is possible to do an hierachical clustering.</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">n</span> <span class="o">&lt;-</span> <span class="m">75</span>
+<span class="n">d</span> <span class="o">&lt;-</span> <span class="n">adist</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">oc.dt</span><span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="n">n</span><span class="p">,</span> <span class="n">name</span><span class="p">],</span> <span class="n">y</span> <span class="o">=</span> <span class="n">oc.dt</span><span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="n">n</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span>
+<span class="n">rownames</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="n">oc.dt</span><span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="n">n</span><span class="p">,</span> <span class="n">name</span><span class="p">]</span>
+<span class="n">hc</span> <span class="o">&lt;-</span> <span class="n">hclust</span><span class="p">(</span><span class="n">as.dist</span><span class="p">(</span><span class="n">d</span><span class="p">))</span></code></pre></figure>
+
+<p>The dendogram is nice to plot, showing the similarities from a wide point of view, as we include in the same graph up to 75 names.</p>
+
+<figure class="highlight"><pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">hc</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="https://london-r-dojo.github.iofigure/source/2016-05-11-Test_fuzzy_match/unnamed-chunk-7-1.png" alt="plot of chunk unnamed-chunk-7" /></p>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">London R-Dojo Blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li>London R-Dojo Blog</li>
+          <li><a href="mailto:"></a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/London-R-Dojo/london-r-dojo.github.io">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">london-r-dojo.github.io</span>
+            </a>
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text">London R coding dojo blog.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
