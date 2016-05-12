@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>London R-Dojo Blog</title>
+    <description>London R coding dojo blog.
+</description>
+    <link>http://www.meetup.com/LondonR/https://london-r-dojo.github.io/</link>
+    <atom:link href="http://www.meetup.com/LondonR/https://london-r-dojo.github.io/feed.xml" rel="self" type="application/rss+xml" />
+    <pubDate>Thu, 12 May 2016 20:38:27 +0100</pubDate>
+    <lastBuildDate>Thu, 12 May 2016 20:38:27 +0100</lastBuildDate>
+    <generator>Jekyll v3.0.1</generator>
+    
+      <item>
+        <title>Exploration of text Clustering</title>
+        <description>&lt;p&gt;Our issue tonight is how to cluster text which have near match.
+At disposition, we have a dataset of companies with the term edf inside. Our goal is to find function and ways to cluster altogether the same companies which had been entered with different names. It is a wide subject and to narrow it, we only look at the two functions, &lt;code class=&quot;highlighter-rouge&quot;&gt;agrep&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;adist&lt;/code&gt;, which implement the Levenshtein distance.&lt;/p&gt;
+
+&lt;h2 id=&quot;initialisation&quot;&gt;Initialisation&lt;/h2&gt;
+
+&lt;p&gt;Load the data:&lt;/p&gt;
+
+&lt;p&gt;We attach the libraries.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Ropencorporate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;quietly&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data.table&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stringr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;data-description&quot;&gt;Data description&lt;/h2&gt;
+
+&lt;p&gt;The dataset is a set of companies name and descriptions, all related to EDF, obtained in that &lt;a href=&quot;http://data-laborer.eu/2016/05/Presentation_of_the_Ropencorporate_package.html&quot;&gt;article&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;We use the package &lt;code class=&quot;highlighter-rouge&quot;&gt;DT&lt;/code&gt; to get an overview:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;res.oc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;list&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;.N&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;name&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;datatable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;options&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;list&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pageLength&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;!--html_preserve--&gt;
+&lt;div id=&quot;htmlwidget-5496&quot; style=&quot;width:100%;height:auto;&quot; class=&quot;datatables&quot;&gt;&lt;/div&gt;
+&lt;script type=&quot;application/json&quot; data-for=&quot;htmlwidget-5496&quot;&gt;{
+  &quot;x&quot;: {
+    &quot;data&quot;: [
+      [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;, &quot;6&quot;, &quot;7&quot;, &quot;8&quot;, &quot;9&quot;, &quot;10&quot;, &quot;11&quot;, &quot;12&quot;, &quot;13&quot;, &quot;14&quot;, &quot;15&quot;, &quot;16&quot;, &quot;17&quot;, &quot;18&quot;, &quot;19&quot;, &quot;20&quot;, &quot;21&quot;, &quot;22&quot;, &quot;23&quot;, &quot;24&quot;, &quot;25&quot;, &quot;26&quot;, &quot;27&quot;, &quot;28&quot;, &quot;29&quot;, &quot;30&quot;, &quot;31&quot;, &quot;32&quot;, &quot;33&quot;, &quot;34&quot;, &quot;35&quot;, &quot;36&quot;, &quot;37&quot;, &quot;38&quot;, &quot;39&quot;, &quot;40&quot;, &quot;41&quot;, &quot;42&quot;, &quot;43&quot;, &quot;44&quot;, &quot;45&quot;, &quot;46&quot;, &quot;47&quot;, &quot;48&quot;, &quot;49&quot;, &quot;50&quot;, &quot;51&quot;, &quot;52&quot;, &quot;53&quot;, &quot;54&quot;, &quot;55&quot;, &quot;56&quot;, &quot;57&quot;, &quot;58&quot;, &quot;59&quot;, &quot;60&quot;, &quot;61&quot;, &quot;62&quot;, &quot;63&quot;, &quot;64&quot;, &quot;65&quot;, &quot;66&quot;, &quot;67&quot;, &quot;68&quot;, &quot;69&quot;, &quot;70&quot;, &quot;71&quot;, &quot;72&quot;, &quot;73&quot;, &quot;74&quot;, &quot;75&quot;, &quot;76&quot;, &quot;77&quot;, &quot;78&quot;, &quot;79&quot;, &quot;80&quot;, &quot;81&quot;, &quot;82&quot;, &quot;83&quot;, &quot;84&quot;, &quot;85&quot;, &quot;86&quot;, &quot;87&quot;, &quot;88&quot;, &quot;89&quot;, &quot;90&quot;, &quot;91&quot;, &quot;92&quot;, &quot;93&quot;, &quot;94&quot;, &quot;95&quot;, &quot;96&quot;, &quot;97&quot;, &quot;98&quot;, &quot;99&quot;, &quot;100&quot;, &quot;101&quot;, &quot;102&quot;, &quot;103&quot;, &quot;104&quot;, &quot;105&quot;, &quot;106&quot;, &quot;107&quot;, &quot;108&quot;, &quot;109&quot;, &quot;110&quot;, &quot;111&quot;, &quot;112&quot;, &quot;113&quot;, &quot;114&quot;, &quot;115&quot;, &quot;116&quot;, &quot;117&quot;, &quot;118&quot;, &quot;119&quot;, &quot;120&quot;, &quot;121&quot;, &quot;122&quot;, &quot;123&quot;, &quot;124&quot;, &quot;125&quot;, &quot;126&quot;, &quot;127&quot;, &quot;128&quot;, &quot;129&quot;, &quot;130&quot;, &quot;131&quot;, &quot;132&quot;, &quot;133&quot;, &quot;134&quot;, &quot;135&quot;, &quot;136&quot;, &quot;137&quot;, &quot;138&quot;, &quot;139&quot;, &quot;140&quot;, &quot;141&quot;, &quot;142&quot;, &quot;143&quot;, &quot;144&quot;, &quot;145&quot;, &quot;146&quot;, &quot;147&quot;, &quot;148&quot;, &quot;149&quot;, &quot;150&quot;, &quot;151&quot;, &quot;152&quot;, &quot;153&quot;, &quot;154&quot;, &quot;155&quot;, &quot;156&quot;, &quot;157&quot;, &quot;158&quot;, &quot;159&quot;, &quot;160&quot;, &quot;161&quot;, &quot;162&quot;, &quot;163&quot;, &quot;164&quot;, &quot;165&quot;, &quot;166&quot;, &quot;167&quot;, &quot;168&quot;, &quot;169&quot;, &quot;170&quot;, &quot;171&quot;, &quot;172&quot;, &quot;173&quot;, &quot;174&quot;, &quot;175&quot;, &quot;176&quot;, &quot;177&quot;, &quot;178&quot;, &quot;179&quot;, &quot;180&quot;, &quot;181&quot;, &quot;182&quot;, &quot;183&quot;, &quot;184&quot;, &quot;185&quot;, &quot;186&quot;, &quot;187&quot;, &quot;188&quot;, &quot;189&quot;, &quot;190&quot;, &quot;191&quot;, &quot;192&quot;, &quot;193&quot;, &quot;194&quot;, &quot;195&quot;, &quot;196&quot;, &quot;197&quot;, &quot;198&quot;, &quot;199&quot;, &quot;200&quot;, &quot;201&quot;, &quot;202&quot;, &quot;203&quot;, &quot;204&quot;, &quot;205&quot;, &quot;206&quot;, &quot;207&quot;, &quot;208&quot;, &quot;209&quot;, &quot;210&quot;, &quot;211&quot;, &quot;212&quot;, &quot;213&quot;, &quot;214&quot;, &quot;215&quot;, &quot;216&quot;, &quot;217&quot;, &quot;218&quot;, &quot;219&quot;, &quot;220&quot;, &quot;221&quot;, &quot;222&quot;, &quot;223&quot;, &quot;224&quot;, &quot;225&quot;, &quot;226&quot;, &quot;227&quot;, &quot;228&quot;, &quot;229&quot;, &quot;230&quot;, &quot;231&quot;, &quot;232&quot;, &quot;233&quot;, &quot;234&quot;, &quot;235&quot;, &quot;236&quot;, &quot;237&quot;, &quot;238&quot;, &quot;239&quot;, &quot;240&quot;, &quot;241&quot;, &quot;242&quot;, &quot;243&quot;, &quot;244&quot;, &quot;245&quot;, &quot;246&quot;, &quot;247&quot;, &quot;248&quot;, &quot;249&quot;, &quot;250&quot;, &quot;251&quot;, &quot;252&quot;, &quot;253&quot;, &quot;254&quot;, &quot;255&quot;, &quot;256&quot;, &quot;257&quot;, &quot;258&quot;, &quot;259&quot;, &quot;260&quot;, &quot;261&quot;, &quot;262&quot;, &quot;263&quot;, &quot;264&quot;, &quot;265&quot;, &quot;266&quot;, &quot;267&quot;, &quot;268&quot;, &quot;269&quot;, &quot;270&quot;, &quot;271&quot;, &quot;272&quot;, &quot;273&quot;, &quot;274&quot;, &quot;275&quot;, &quot;276&quot;, &quot;277&quot;, &quot;278&quot;, &quot;279&quot;, &quot;280&quot;, &quot;281&quot;, &quot;282&quot;, &quot;283&quot;, &quot;284&quot;, &quot;285&quot;, &quot;286&quot;, &quot;287&quot;, &quot;288&quot;, &quot;289&quot;, &quot;290&quot;, &quot;291&quot;, &quot;292&quot;, &quot;293&quot;, &quot;294&quot;, &quot;295&quot;, &quot;296&quot;, &quot;297&quot;, &quot;298&quot;, &quot;299&quot;, &quot;300&quot;, &quot;301&quot;, &quot;302&quot;, &quot;303&quot;, &quot;304&quot;, &quot;305&quot;, &quot;306&quot;, &quot;307&quot;, &quot;308&quot;, &quot;309&quot;, &quot;310&quot;, &quot;311&quot;, &quot;312&quot;, &quot;313&quot;, &quot;314&quot;, &quot;315&quot;, &quot;316&quot;, &quot;317&quot;, &quot;318&quot;, &quot;319&quot;, &quot;320&quot;, &quot;321&quot;, &quot;322&quot;, &quot;323&quot;, &quot;324&quot;, &quot;325&quot;, &quot;326&quot;, &quot;327&quot;, &quot;328&quot;, &quot;329&quot;, &quot;330&quot;, &quot;331&quot;, &quot;332&quot;, &quot;333&quot;, &quot;334&quot;, &quot;335&quot;, &quot;336&quot;, &quot;337&quot;, &quot;338&quot;, &quot;339&quot;, &quot;340&quot;, &quot;341&quot;, &quot;342&quot;, &quot;343&quot;, &quot;344&quot;, &quot;345&quot;, &quot;346&quot;, &quot;347&quot;, &quot;348&quot;, &quot;349&quot;, &quot;350&quot;, &quot;351&quot;, &quot;352&quot;, &quot;353&quot;, &quot;354&quot;, &quot;355&quot;, &quot;356&quot;, &quot;357&quot;, &quot;358&quot;, &quot;359&quot;, &quot;360&quot;, &quot;361&quot;, &quot;362&quot;, &quot;363&quot;, &quot;364&quot;, &quot;365&quot;, &quot;366&quot;, &quot;367&quot;, &quot;368&quot;, &quot;369&quot;, &quot;370&quot;, &quot;371&quot;, &quot;372&quot;, &quot;373&quot;, &quot;374&quot;, &quot;375&quot;, &quot;376&quot;, &quot;377&quot;, &quot;378&quot;, &quot;379&quot;, &quot;380&quot;, &quot;381&quot;, &quot;382&quot;, &quot;383&quot;, &quot;384&quot;, &quot;385&quot;, &quot;386&quot;, &quot;387&quot;, &quot;388&quot;, &quot;389&quot;, &quot;390&quot;, &quot;391&quot;, &quot;392&quot;, &quot;393&quot;, &quot;394&quot;, &quot;395&quot;, &quot;396&quot;, &quot;397&quot;, &quot;398&quot;, &quot;399&quot;, &quot;400&quot;, &quot;401&quot;, &quot;402&quot;, &quot;403&quot;, &quot;404&quot;, &quot;405&quot;, &quot;406&quot;, &quot;407&quot;, &quot;408&quot;, &quot;409&quot;, &quot;410&quot;, &quot;411&quot;, &quot;412&quot;, &quot;413&quot;, &quot;414&quot;, &quot;415&quot;, &quot;416&quot;, &quot;417&quot;, &quot;418&quot;, &quot;419&quot;, &quot;420&quot;, &quot;421&quot;, &quot;422&quot;, &quot;423&quot;, &quot;424&quot;, &quot;425&quot;, &quot;426&quot;, &quot;427&quot;, &quot;428&quot;, &quot;429&quot;, &quot;430&quot;, &quot;431&quot;, &quot;432&quot;],
+      [&quot;\&quot;EDF ENGINEERING SRL\&quot;&quot;, &quot;\&quot;EDF TRADING LIMITED LONDON SUCURSALA BUCURESTI\&quot;&quot;, &quot;\&quot;EDF Énergies Nouvelles Belgium\&quot; en abrégé \&quot;EDF EN Belgium\&quot;&quot;, &quot;\&quot;EDF\&quot; SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ&quot;, &quot;128 EDF, LLC&quot;, &quot;1405940 NOVA SCOTIA LIMITED&quot;, &quot;3235432 CANADA INC.&quot;, &quot;9189-0558 QUÉBEC INC.&quot;, &quot;9200-6881 QUÉBEC INC.&quot;, &quot;ALPHA REPROGRAPHIC SERVICES, INC.&quot;, &quot;AMERADA COMMUNICATIONS LIMITED&quot;, &quot;AMHERST EDF, LLC&quot;, &quot;BECK BURN WINDFARM LIMITED&quot;, &quot;BLOOMFIELD APARTMENTS, LLC&quot;, &quot;BMR PROPERTY SOLUTIONS LIMITED&quot;, &quot;BOUNDARY LANE WINDFARM LIMITED&quot;, &quot;BRAEMORE WOOD WINDFARM LIMITED&quot;, &quot;BRITISH ENERGY GENERATION LIMITED&quot;, &quot;BRITISH ENERGY GROUP LIMITED&quot;, &quot;BROOKRIDGE EDF HOUSING INVESTORS, L.P.&quot;, &quot;CASA DE SCHIMB VALUTAR E D F ASRO SRL&quot;, &quot;CHELSEA EDF PARKWAY, LLC&quot;, &quot;CONSTRUCTION EDF INC.&quot;, &quot;CONTRACT FINANCIAL, LLC&quot;, &quot;CORRIEMOILLIE WINDFARM LIMITED&quot;, &quot;Coastal EDF, Inc.&quot;, &quot;DANIEL FRADETTE&quot;, &quot;DESIGN2C v/Ellen Dahl Frederiksen&quot;, &quot;DÉVELOPPEMENT EDF EN CANADA INC.&quot;, &quot;E D F ADVERTISING, INC.&quot;, &quot;E D F ASSOCIATES, INC.&quot;, &quot;E D F BUSINESS CLUB INC.&quot;, &quot;E D F CONSTRUCTION INC.&quot;, &quot;E D F ENTERPRISES, INC.&quot;, &quot;E D F FARM &amp;amp; FEEDERS, INC.&quot;, &quot;E D F MAN ESPAÑA SA&quot;, &quot;E D F SA&quot;, &quot;E D F TRADING LIMITED&quot;, &quot;E D F WATERTOWN, INC.&quot;, &quot;E D F, L.L.C.&quot;, &quot;E. D. F. LIMITED&quot;, &quot;E. D. F. LIMITED, INC.&quot;, &quot;E. D. F. MULTI SERVICES &amp;amp; CARGO INC.&quot;, &quot;E. D. F. RESOURCES, INC.&quot;, &quot;E. D. F. VENTURES, INC.&quot;, &quot;E. D. F., INC.&quot;, &quot;E.D.F Remodeling Inc.&quot;, &quot;E.D.F TRADING&quot;, &quot;E.D.F.&quot;, &quot;E.D.F. (AUSTRALIA) PTY LTD&quot;, &quot;E.D.F. ASSOCIÉS&quot;, &quot;E.D.F. CONCRETE, INC.&quot;, &quot;E.D.F. CONSTRUCTION, INC.&quot;, &quot;E.D.F. DESIGN &amp;amp; CONSTRUCTION, INC.&quot;, &quot;E.D.F. ECONOMIE&quot;, &quot;E.D.F. ENGINEERING LIMITED&quot;, &quot;E.D.F. ENTERPRISES, INC.&quot;, &quot;E.D.F. FASHIONS, INC.&quot;, &quot;E.D.F. FISHERIES LIMITED&quot;, &quot;E.D.F. HOLDING CORP.&quot;, &quot;E.D.F. INCORPORATED&quot;, &quot;E.D.F. INDUSTRIES, INC.&quot;, &quot;E.D.F. LLC&quot;, &quot;E.D.F. MANAGEMENT CORPORATION&quot;, &quot;E.D.F. MARKETING, INC.&quot;, &quot;E.D.F. MEN, TRGOVINA, PROIZVODNJA, STORITVE, D.O.O.&quot;, &quot;E.D.F. PAINTING, LLC&quot;, &quot;E.D.F. PROPERTIES, LLC&quot;, &quot;E.D.F. REALTY CORP.&quot;, &quot;E.D.F. RESOURCES, INC.&quot;, &quot;E.D.F. Remodeling Inc.&quot;, &quot;E.D.F. WATERFORD, LLC&quot;, &quot;E.D.F. WIND FARM SRL&quot;, &quot;E.D.F., COMPANY, INCORPORATED&quot;, &quot;E.D.F., INC.&quot;, &quot;E.D.F., LLC&quot;, &quot;EASTERN POWER NETWORKS PLC&quot;, &quot;ECOLE DANSE FORMATION DE L&#39;ESTRIE INC.&quot;, &quot;EDF&quot;, &quot;EDF &amp;amp; ASSOCIATES INC.&quot;, &quot;EDF &amp;amp; ASSOCIATES, INC.&quot;, &quot;EDF &amp;amp; Associates Consulting, LLC&quot;, &quot;EDF (PROPERTIES) LIMITED&quot;, &quot;EDF (SERVICES) LIMITED&quot;, &quot;EDF (SKY SERVICES) LIMITED&quot;, &quot;EDF (USA), INC.&quot;, &quot;EDF (VIETNAM) LIMITED&quot;, &quot;EDF + SPACE PLANNERS PTE. LTD.&quot;, &quot;EDF - EXPERT DEALING FINANCING&quot;, &quot;EDF - PROGRESS INCORPORATED&quot;, &quot;EDF 2 INC.&quot;, &quot;EDF 2005 GP INC.&quot;, &quot;EDF 2005 GP Inc.&quot;, &quot;EDF ABACEBISI&quot;, &quot;EDF ACQUISITION COMPANY, INC.&quot;, &quot;EDF ADVISORS LLC&quot;, &quot;EDF AIR CONDITIONING LIMITED&quot;, &quot;EDF AMERICAS FINANCE CO., LLC&quot;, &quot;EDF ANSTALT&quot;, &quot;EDF ARSENAL WATERTOWN HOLDINGS, LLC&quot;, &quot;EDF ASRO SRL&quot;, &quot;EDF ASSOCIATES LIMITED&quot;, &quot;EDF AVIATION LLC&quot;, &quot;EDF B.V.&quot;, &quot;EDF BELGIUM&quot;, &quot;EDF BENELUX BV&quot;, &quot;EDF BUILDERS INCORPORATED&quot;, &quot;EDF Beheer B.V.&quot;, &quot;EDF Benelux B.V.&quot;, &quot;EDF CAPITAL, LLC&quot;, &quot;EDF COLLECTION MANAGEMENT NETWORK LTD&quot;, &quot;EDF COLLECTION SERVICES NETWORK LTD&quot;, &quot;EDF COLLECTIONS LTD&quot;, &quot;EDF COMMUNICATION PRODUCTS, INC.&quot;, &quot;EDF COMMUNICATIONS LLC&quot;, &quot;EDF COMMUNICATIONS, INC.&quot;, &quot;EDF COMPANY INC&quot;, &quot;EDF COMPANY, LLC&quot;, &quot;EDF CONCEPTS LIMITED&quot;, &quot;EDF CONSORTIUM, LLC&quot;, &quot;EDF CONSTRUCTIONS PTY LIMITED&quot;, &quot;EDF CONSULTANTS LIMITED&quot;, &quot;EDF CONSULTANTS, INC.&quot;, &quot;EDF CONSULTING&quot;, &quot;EDF CONSULTING GROUP LIMITED&quot;, &quot;EDF CONSULTING LLC&quot;, &quot;EDF CONSULTING SA&quot;, &quot;EDF CONSULTING, INC.&quot;, &quot;EDF CONTRACTING, LLC&quot;, &quot;EDF CORP.&quot;, &quot;EDF Consulting&quot;, &quot;EDF DANCE STUDIO LIMITED&quot;, &quot;EDF DANVERS HOLDINGS, LLC&quot;, &quot;EDF DANVERS II, LLC&quot;, &quot;EDF DANVERS, LLC&quot;, &quot;EDF DATAPRODUKTER HANDELSBOLAG&quot;, &quot;EDF DESIGNS, INC.&quot;, &quot;EDF DEVELOPMENT COMPANY LIMITED&quot;, &quot;EDF DEVELOPMENT SA&quot;, &quot;EDF DEVELOPMENT, INC.&quot;, &quot;EDF DIN UK LIMITED&quot;, &quot;EDF DIRECT PTY LIMITED&quot;, &quot;EDF DISTRIBUTION INC.&quot;, &quot;EDF DISTRIBUTORS AND DUTY FREE SHOPS LIMITED&quot;, &quot;EDF DRESDEN LTD&quot;, &quot;EDF ELECTRIC, INC.&quot;, &quot;EDF EN CANADA DEVELOPMENT INC. - DÉVELOPPEMENT EDF EN CANADA INC.&quot;, &quot;EDF EN CANADA INC.&quot;, &quot;EDF EN Canada Distributed Solar GP Inc.&quot;, &quot;EDF EN Canada Inc.&quot;, &quot;EDF EN Canada Solar Arnprior A GP Inc.&quot;, &quot;EDF EN Canada Solar Arnprior B GP Inc.&quot;, &quot;EDF EN Canada Solar Smiths Falls A GP Inc.&quot;, &quot;EDF EN Canada Solar Smiths Falls B GP Inc.&quot;, &quot;EDF EN Canada Solar St. Isidore A GP Inc.&quot;, &quot;EDF EN DENMARK A/S&quot;, &quot;EDF EN OSTERILD ApS&quot;, &quot;EDF EN POLSKA SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ&quot;, &quot;EDF EN SERVICES UK LIMITED&quot;, &quot;EDF EN SOUTH AFRICA&quot;, &quot;EDF EN Services Belgium&quot;, &quot;EDF EN UK LIMITED&quot;, &quot;EDF ENERGIES NOUVELLES&quot;, &quot;EDF ENERGY (CONTRACT SERVICES) LIMITED&quot;, &quot;EDF ENERGY (COTTAM POWER) LIMITED&quot;, &quot;EDF ENERGY (D1) LIMITED&quot;, &quot;EDF ENERGY (D2) LIMITED&quot;, &quot;EDF ENERGY (DORMANT HOLDINGS) LIMITED&quot;, &quot;EDF ENERGY (ENERGY BRANCH) PLC&quot;, &quot;EDF ENERGY (GAS STORAGE HOLE HOUSE) LIMITED&quot;, &quot;EDF ENERGY (LONDON HEAT AND POWER) LIMITED&quot;, &quot;EDF ENERGY (METRO HOLDINGS) LIMITED&quot;, &quot;EDF ENERGY (NORTHERN OFFSHORE WIND) LIMITED&quot;, &quot;EDF ENERGY (PROJECTS) LIMITED&quot;, &quot;EDF ENERGY (SOUTH EAST GENERATION) LIMITED&quot;, &quot;EDF ENERGY (UK) LIMITED&quot;, &quot;EDF ENERGY (WEST BURTON POWER) LIMITED&quot;, &quot;EDF ENERGY 1 LIMITED&quot;, &quot;EDF ENERGY CUSTOMER FIELD SERVICES (DATA) LIMITED&quot;, &quot;EDF ENERGY CUSTOMER FIELD SERVICES (METERING) LIMITED&quot;, &quot;EDF ENERGY CUSTOMERS PLC&quot;, &quot;EDF ENERGY DISTRIBUTION FUND LIMITED&quot;, &quot;EDF ENERGY ESPS TRUSTEE LIMITED&quot;, &quot;EDF ENERGY FLEET SERVICES LIMITED&quot;, &quot;EDF ENERGY GB LIMITED&quot;, &quot;EDF ENERGY GROUP HOLDINGS PLC&quot;, &quot;EDF ENERGY HOLDINGS LIMITED&quot;, &quot;EDF ENERGY HOMEPHONE LIMITED&quot;, &quot;EDF ENERGY INVESTMENTS&quot;, &quot;EDF ENERGY LAKE LIMITED&quot;, &quot;EDF ENERGY NUCLEAR GENERATION GROUP LIMITED&quot;, &quot;EDF ENERGY NUCLEAR GENERATION LIMITED&quot;, &quot;EDF ENERGY PENSION SCHEME TRUSTEE LIMITED&quot;, &quot;EDF ENERGY PLC&quot;, &quot;EDF ENERGY POWER SYSTEMS (EASTERN) LIMITED&quot;, &quot;EDF ENERGY POWER SYSTEMS (LONDON) LIMITED&quot;, &quot;EDF ENERGY POWER SYSTEMS (SOUTH EASTERN) LIMITED&quot;, &quot;EDF ENERGY POWERCOM SYSTEMS (LONDON) LIMITED&quot;, &quot;EDF ENERGY PROPERTY SERVICES LIMITED&quot;, &quot;EDF ENERGY R&amp;amp;D UK CENTRE LIMITED&quot;, &quot;EDF ENERGY RENEWABLES HOLDINGS LIMITED&quot;, &quot;EDF ENERGY RENEWABLES LIMITED&quot;, &quot;EDF ENERGY ROUND 3 ISLE OF WIGHT LIMITED&quot;, &quot;EDF ENERGY SERVICES LIMITED LIABILITY COMPANY&quot;, &quot;EDF ENERGY SERVICES, LLC&quot;, &quot;EDF ENGINEERING UND DESIGN IM FAHRZEUGBAU LTD&quot;, &quot;EDF ENTERPRISES DW LLC&quot;, &quot;EDF ENTERPRISES GV, LLC&quot;, &quot;EDF ENTERPRISES HOLDING, LLC&quot;, &quot;EDF ENTERPRISES LIMITED LIABILITY COMPANY&quot;, &quot;EDF ENTERPRISES PTY LTD&quot;, &quot;EDF ENTERPRISES, BX, LLC&quot;, &quot;EDF ENTERPRISES, INC.&quot;, &quot;EDF ENTERPRISES, LLC&quot;, &quot;EDF ENTERPRISES, UA, LLC&quot;, &quot;EDF ESTATICA Y DINAMICA DE FLUIDOS SA&quot;, &quot;EDF EURO AMERICANA&quot;, &quot;EDF EURO-DOMUS-FINANZ S.A.&quot;, &quot;EDF EXCELSIOR LLC&quot;, &quot;EDF Energy (NNB) Limited&quot;, &quot;EDF Energy Services, LLC&quot;, &quot;EDF Express&quot;, &quot;EDF FARMS LLC&quot;, &quot;EDF FILTER SOLUTIONS LIMITED&quot;, &quot;EDF FINANCE MANAGEMENT NETWORK LTD&quot;, &quot;EDF FINANCIAL CONCEPTS, INC.&quot;, &quot;EDF FINANCING CORP.&quot;, &quot;EDF FLOWERS L.L.C.&quot;, &quot;EDF GROUP INC&quot;, &quot;EDF GROUP, LLC&quot;, &quot;EDF HOLDCO LLC&quot;, &quot;EDF HOLDING ApS&quot;, &quot;EDF HOLDING CO. LIMITED&quot;, &quot;EDF HOLDING CO.,LTD.&quot;, &quot;EDF HOLDINGS (USA) INC.&quot;, &quot;EDF HOLDINGS PTY LIMITED&quot;, &quot;EDF HOLDINGS, LLC&quot;, &quot;EDF INC.&quot;, &quot;EDF INC. WHICH WILL DO BUSINESS IN CALIFORNIA AS EDF POWER INC.&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (CA) LLC&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (CA), LLC&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (IL), LLC&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (NY), LLC&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (OH), LLC&quot;, &quot;EDF INTERNATIONAL PTE. LTD.&quot;, &quot;EDF INVESTISSEMENTS GROUPE&quot;, &quot;EDF INVESTMENT PARTNERS, L.L.C.&quot;, &quot;EDF INVESTMENTS LLC&quot;, &quot;EDF INVESTMENTS LLP&quot;, &quot;EDF INVESTMENTS PTY LIMITED&quot;, &quot;EDF INVESTMENTS SL&quot;, &quot;EDF INVESTMENTS, LLC&quot;, &quot;EDF INVESTORS GROUP, L.L.C.&quot;, &quot;EDF INVESTORS, L.L.C.&quot;, &quot;EDF INVESTORS, LLC&quot;, &quot;EDF IONEL PERLEA RESIDENCE LIMITED&quot;, &quot;EDF ISLAMABAD (PRIVATE) LIMITED&quot;, &quot;EDF Inc.&quot;, &quot;EDF International (Europe Déménagements Fournitures International)&quot;, &quot;EDF JUICES PRIVATE LIMITED&quot;, &quot;EDF LAB SINGAPORE PTE. LTD.&quot;, &quot;EDF LANCASTER SOLAR LLC&quot;, &quot;EDF LEISURE LTD&quot;, &quot;EDF LEPOMIS SOLAR LLC&quot;, &quot;EDF LIMITED&quot;, &quot;EDF LLC&quot;, &quot;EDF LOGITECH SRL&quot;, &quot;EDF LONDON CAPITAL, L.P.&quot;, &quot;EDF LONDON HOLDINGS&quot;, &quot;EDF LONDON LIMITED&quot;, &quot;EDF LTD.&quot;, &quot;EDF LUMINAIRES&quot;, &quot;EDF LUXURY DESIGNS, INC.&quot;, &quot;EDF Luminus&quot;, &quot;EDF Luminus Wind Together&quot;, &quot;EDF MANAGEMENT, LLC&quot;, &quot;EDF MANTON AVENUE, LLC&quot;, &quot;EDF MASS AVE, LLC&quot;, &quot;EDF MASSACHUSETTS SOLAR HOLDINGS, LLC&quot;, &quot;EDF MASSACHUSETTS SPONSOR MEMBER, LLC&quot;, &quot;EDF MEDICAL P.C.&quot;, &quot;EDF MIDDLETOWN, LLC&quot;, &quot;EDF Management, LLC&quot;, &quot;EDF Manton Avenue, LLC&quot;, &quot;EDF NC SOLAR, LLC&quot;, &quot;EDF NETWORK LLC&quot;, &quot;EDF NORTH DARTMOUTH I, INC.&quot;, &quot;EDF NORTH DARTMOUTH I, LLC&quot;, &quot;EDF NORTH DARTMOUTH II, LLC&quot;, &quot;EDF NORTH DARTMOUTH, LLC&quot;, &quot;EDF NUCLEAR LLC&quot;, &quot;EDF OCEANTRANSPORT INC.&quot;, &quot;EDF PARENT BOOSTER&quot;, &quot;EDF PARTNERS, L.P.&quot;, &quot;EDF PENINSULA IBERICA SL&quot;, &quot;EDF POLSKA CENTRALA SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ&quot;, &quot;EDF POLSKA CUW SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ&quot;, &quot;EDF PORTSMOUTH, LLC&quot;, &quot;EDF POWER INC.&quot;, &quot;EDF PRODUCTS, INC.&quot;, &quot;EDF PROPERTIES, LLC&quot;, &quot;EDF PROPERTY SOLUTIONS, LLC&quot;, &quot;EDF PTY LIMITED&quot;, &quot;EDF PUB INC.&quot;, &quot;EDF PV COMPANY SL&quot;, &quot;EDF Partners, LLC&quot;, &quot;EDF Partnership SCSp&quot;, &quot;EDF Properties, LLC&quot;, &quot;EDF Quality Consulting LLC&quot;, &quot;EDF REALTY&quot;, &quot;EDF REALTY INC.&quot;, &quot;EDF RENDER SYSTEMS LIMITED&quot;, &quot;EDF RENEWABLE ASSET HOLDINGS, INC.&quot;, &quot;EDF RENEWABLE DEVELOPMENT, INC.&quot;, &quot;EDF RENEWABLE DG SERVICES LLC&quot;, &quot;EDF RENEWABLE EAST COAST, INC.&quot;, &quot;EDF RENEWABLE ENERGY, INC.&quot;, &quot;EDF RENEWABLE LAND HOLDINGS, INC.&quot;, &quot;EDF RENEWABLE LFG HOLDINGS, LLC&quot;, &quot;EDF RENEWABLE SERVICES INC.&quot;, &quot;EDF RENEWABLE SERVICES, INC.&quot;, &quot;EDF RENEWABLE SOLAR HOLDINGS, INC.&quot;, &quot;EDF RENEWABLE WINDFARM I, INC.&quot;, &quot;EDF RENEWABLE WINDFARM III, INC.&quot;, &quot;EDF RENEWABLE WINDFARM IV, INC.&quot;, &quot;EDF RENEWABLE WINDFARM V, INC.&quot;, &quot;EDF RENEWABLE WINDFARM VI, INC.&quot;, &quot;EDF RESEARCH INC.&quot;, &quot;EDF RESOURCE CAPITAL, INC.&quot;, &quot;EDF RESTORATION SERVICES, INC.&quot;, &quot;EDF RIVERSIDE PLAZA, LLC&quot;, &quot;EDF Renewable Asset Holdings, Inc.&quot;, &quot;EDF Renewable Development, Inc.&quot;, &quot;EDF Renewable LFG Holdings, LLC&quot;, &quot;EDF Renewable Services&quot;, &quot;EDF Renewable Services Inc.&quot;, &quot;EDF Renewable Services, Inc.&quot;, &quot;EDF Resource Capital, Inc.&quot;, &quot;EDF Riverside Plaza, LLC&quot;, &quot;EDF SALES &amp;amp; MARKETING, INC.&quot;, &quot;EDF SCARBOROUGH, LLC&quot;, &quot;EDF SCHOOL OF DANCE &amp;amp; ELITE DANCE FASHIONS, L.L.C.&quot;, &quot;EDF SECURITY ENTERPRISES INC.&quot;, &quot;EDF SEEKONK II, LLC&quot;, &quot;EDF SEEKONK THREE, LLC&quot;, &quot;EDF SEEKONK, LLC&quot;, &quot;EDF SERVICES (PRIVATE.) LIMITED&quot;, &quot;EDF SERVICES LIMITED&quot;, &quot;EDF SERVICES LLC&quot;, &quot;EDF SERVICES, INC.&quot;, &quot;EDF SHIELD LIMITED&quot;, &quot;EDF SOLAR ENERGY LTD&quot;, &quot;EDF SOLAR I, LLC&quot;, &quot;EDF SOLAR II, LLC&quot;, &quot;EDF SOLAR SOCIEDAD LIMITADA&quot;, &quot;EDF SOLUTIONS LIMITED&quot;, &quot;EDF SOUTH EAST ASIA COMPAY LIMITED&quot;, &quot;EDF SRL&quot;, &quot;EDF SYSTEMS, INC.&quot;, &quot;EDF Septen&quot;, &quot;EDF Sitestreet&quot;, &quot;EDF Sky EuroCore S.à r.l.&quot;, &quot;EDF Sky GPF S.à r.l.&quot;, &quot;EDF Sky KSH S.à r.l.&quot;, &quot;EDF Sky S.à r.l.&quot;, &quot;EDF Solutions&quot;, &quot;EDF Solutions, LLC&quot;, &quot;EDF TAX CONTRACTOR SUPPORT LIMITED&quot;, &quot;EDF TAX DEFENCE LIMITED&quot;, &quot;EDF TAX LIMITED&quot;, &quot;EDF TAX PREMIER SUPPORT LIMITED&quot;, &quot;EDF TECHNOLOGIES DE L&#39;INFORMATION INC.&quot;, &quot;EDF TECHNOLOGIES LLC&quot;, &quot;EDF TEMPLE TERRACE, LLC&quot;, &quot;EDF TERRACE RIDGE, LLC&quot;, &quot;EDF TRADERS INC.&quot;, &quot;EDF TRADING&quot;, &quot;EDF TRADING AUSTRALIA PTY LIMITED&quot;, &quot;EDF TRADING BIOENERGY LIMITED&quot;, &quot;EDF TRADING ELECTRICIDAD Y GAS SL&quot;, &quot;EDF TRADING HOLDINGS LLC&quot;, &quot;EDF TRADING LIMITED&quot;, &quot;EDF TRADING LIMITED NORSK AVDELING AV UTENLANDSK FORETAK&quot;, &quot;EDF TRADING LTD&quot;, &quot;EDF TRADING MARKETS LIMITED&quot;, &quot;EDF TRADING NORTH AMERICA LIMITED LIABILITY COMPANY&quot;, &quot;EDF TRADING NORTH AMERICA MANAGEMENT LLC&quot;, &quot;EDF TRADING NORTH AMERICA, LLC&quot;, &quot;EDF TRADING RESOURCES, LLC&quot;, &quot;EDF TRADING SINGAPORE PTE. LIMITED&quot;, &quot;EDF TRANSPORT&quot;, &quot;EDF TRANSPORT LIMITED&quot;, &quot;EDF TRANSPORT, INC.&quot;, &quot;EDF TRANSPORTS INC.&quot;, &quot;EDF TRUCK LLC&quot;, &quot;EDF Technologies Limited&quot;, &quot;EDF Teknik Aktiebolag&quot;, &quot;EDF Trading Limited&quot;, &quot;EDF Trading North America, LLC&quot;, &quot;EDF Transport&quot;, &quot;EDF UK FINANCE&quot;, &quot;EDF VAPORS LLC&quot;, &quot;EDF VENTURES I, LIMITED PARTNERSHIP&quot;, &quot;EDF VENTURES II, LIMITED PARTNERSHIP&quot;, &quot;EDF VENTURES III HEALTHCARE OPPORTUNITY FUND, LIMITED PARTNERSHIP&quot;, &quot;EDF VENTURES III SIDECAR, LIMITED PARTNERSHIP&quot;, &quot;EDF VENTURES III, LIMITED PARTNERSHIP&quot;, &quot;EDF VENTURES OPPORTUNITY FUND, LIMITED PARTNERSHIP&quot;, &quot;EDF VENTURES, LLC&quot;, &quot;EDF WARWICK, LLC&quot;, &quot;EDF WATERTOWN II, LLC&quot;, &quot;EDF WATERTOWN, INC.&quot;, &quot;EDF WATERTOWN, LLC&quot;, &quot;EDF WEST, LLC&quot;, &quot;EDF WESTBOROUGH, LLC&quot;, &quot;EDF WINDUP CORPORATION&quot;, &quot;EDF Warwick, LLC&quot;, &quot;EDF Y GDF SL&quot;, &quot;EDF, INC.&quot;, &quot;EDF, INCORPORATED&quot;, &quot;EDF, Inc.&quot;, &quot;EDF, L.L.C.&quot;, &quot;EDF, LLC&quot;, &quot;EDF-ASSOCIATES, LLC&quot;, &quot;EDF-Flexoprint&quot;, &quot;EDF-M1 MANAGEMENT LLC&quot;, &quot;EDF-M1 ONSHORE, L.P.&quot;, &quot;EDF-MED (IMPORT &amp;amp; DISTRIBUTION GROUP) LIMITED&quot;, &quot;EDF-RE TEXAS DEVELOPMENT I, LLC&quot;, &quot;EDF-RE TEXAS DEVELOPMENT II, LLC&quot;, &quot;EDF-RE TEXAS DEVELOPMENT III, LLC&quot;, &quot;EDF-RE US DEVELOPMENT, LLC&quot;],
+      [1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10, 1, 1, 1, 1, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, 1, 1, 1, 2, 1, 1, 2, 3, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 18, 1, 2, 5, 2, 3, 1, 21, 1, 2, 2, 2, 2, 2, 1, 8, 1, 1, 1, 4, 2, 1, 2, 6, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 24, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 6, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 6, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1]
+    ],
+    &quot;container&quot;: &quot;&lt;table class=\&quot;display\&quot;&gt;\n  &lt;thead&gt;\n    &lt;tr&gt;\n      &lt;th&gt; &lt;/th&gt;\n      &lt;th&gt;name&lt;/th&gt;\n      &lt;th&gt;N&lt;/th&gt;\n    &lt;/tr&gt;\n  &lt;/thead&gt;\n&lt;/table&gt;&quot;,
+    &quot;options&quot;: {
+      &quot;pageLength&quot;: 10,
+      &quot;columnDefs&quot;: [
+        {
+          &quot;orderable&quot;: false,
+          &quot;targets&quot;: 0
+        },
+        {
+          &quot;className&quot;: &quot;dt-right&quot;,
+          &quot;targets&quot;: 2
+        }
+      ],
+      &quot;order&quot;: [],
+      &quot;autoWidth&quot;: false
+    },
+    &quot;callback&quot;: &quot;function(table) {\nreturn table;\n}&quot;,
+    &quot;filter&quot;: &quot;none&quot;
+  },
+  &quot;evals&quot;: [&quot;callback&quot;]
+}&lt;/script&gt;
+&lt;!--/html_preserve--&gt;
+
+&lt;h2 id=&quot;first-try-agrep&quot;&gt;First try: agrep&lt;/h2&gt;
+
+&lt;p&gt;The function &lt;code class=&quot;highlighter-rouge&quot;&gt;agrep&lt;/code&gt; allow to do approximate match.
+We create a matrix of match and count for each name of companies, the number of times we could find a valuable match.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;# create the matrix of matchs
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;res&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;matrix&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NA&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nrow&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ncol&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]))&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;for&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;idx&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])){&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;res&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;idx&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;agrepl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;idx&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;res.sum&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;apply&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;res&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;res.sel.pos&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;which&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;res.sum&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The result is displayed in a datatable format as well.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;datatable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data.frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;res.sel.pos&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;freq&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;res.sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;res.sel.pos&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stringsAsFactors&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;!--html_preserve--&gt;
+&lt;div id=&quot;htmlwidget-9162&quot; style=&quot;width:100%;height:auto;&quot; class=&quot;datatables&quot;&gt;&lt;/div&gt;
+&lt;script type=&quot;application/json&quot; data-for=&quot;htmlwidget-9162&quot;&gt;{
+  &quot;x&quot;: {
+    &quot;data&quot;: [
+      [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;, &quot;6&quot;, &quot;7&quot;, &quot;8&quot;, &quot;9&quot;, &quot;10&quot;, &quot;11&quot;, &quot;12&quot;, &quot;13&quot;, &quot;14&quot;, &quot;15&quot;, &quot;16&quot;, &quot;17&quot;, &quot;18&quot;, &quot;19&quot;, &quot;20&quot;, &quot;21&quot;, &quot;22&quot;, &quot;23&quot;, &quot;24&quot;, &quot;25&quot;, &quot;26&quot;, &quot;27&quot;, &quot;28&quot;, &quot;29&quot;, &quot;30&quot;, &quot;31&quot;, &quot;32&quot;, &quot;33&quot;, &quot;34&quot;, &quot;35&quot;, &quot;36&quot;, &quot;37&quot;, &quot;38&quot;, &quot;39&quot;, &quot;40&quot;, &quot;41&quot;, &quot;42&quot;, &quot;43&quot;, &quot;44&quot;, &quot;45&quot;, &quot;46&quot;, &quot;47&quot;, &quot;48&quot;, &quot;49&quot;, &quot;50&quot;, &quot;51&quot;, &quot;52&quot;, &quot;53&quot;, &quot;54&quot;, &quot;55&quot;, &quot;56&quot;, &quot;57&quot;, &quot;58&quot;, &quot;59&quot;, &quot;60&quot;, &quot;61&quot;, &quot;62&quot;, &quot;63&quot;, &quot;64&quot;, &quot;65&quot;, &quot;66&quot;, &quot;67&quot;, &quot;68&quot;, &quot;69&quot;, &quot;70&quot;, &quot;71&quot;, &quot;72&quot;, &quot;73&quot;, &quot;74&quot;, &quot;75&quot;, &quot;76&quot;, &quot;77&quot;, &quot;78&quot;, &quot;79&quot;, &quot;80&quot;, &quot;81&quot;, &quot;82&quot;, &quot;83&quot;, &quot;84&quot;, &quot;85&quot;, &quot;86&quot;, &quot;87&quot;, &quot;88&quot;, &quot;89&quot;, &quot;90&quot;, &quot;91&quot;, &quot;92&quot;, &quot;93&quot;, &quot;94&quot;, &quot;95&quot;, &quot;96&quot;, &quot;97&quot;, &quot;98&quot;, &quot;99&quot;, &quot;100&quot;, &quot;101&quot;, &quot;102&quot;, &quot;103&quot;, &quot;104&quot;, &quot;105&quot;, &quot;106&quot;, &quot;107&quot;, &quot;108&quot;, &quot;109&quot;, &quot;110&quot;, &quot;111&quot;, &quot;112&quot;, &quot;113&quot;, &quot;114&quot;, &quot;115&quot;, &quot;116&quot;, &quot;117&quot;, &quot;118&quot;, &quot;119&quot;, &quot;120&quot;, &quot;121&quot;, &quot;122&quot;],
+      [&quot;\&quot;EDF\&quot; SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ&quot;, &quot;DÉVELOPPEMENT EDF EN CANADA INC.&quot;, &quot;E D F ASSOCIATES, INC.&quot;, &quot;E D F ENTERPRISES, INC.&quot;, &quot;E D F SA&quot;, &quot;E D F TRADING LIMITED&quot;, &quot;E D F WATERTOWN, INC.&quot;, &quot;E D F, L.L.C.&quot;, &quot;E. D. F. LIMITED&quot;, &quot;E. D. F. RESOURCES, INC.&quot;, &quot;E. D. F., INC.&quot;, &quot;E.D.F Remodeling Inc.&quot;, &quot;E.D.F TRADING&quot;, &quot;E.D.F.&quot;, &quot;E.D.F. ENTERPRISES, INC.&quot;, &quot;E.D.F. LLC&quot;, &quot;E.D.F. PROPERTIES, LLC&quot;, &quot;E.D.F. RESOURCES, INC.&quot;, &quot;E.D.F. Remodeling Inc.&quot;, &quot;E.D.F., INC.&quot;, &quot;E.D.F., LLC&quot;, &quot;EDF&quot;, &quot;EDF &amp;amp; ASSOCIATES INC.&quot;, &quot;EDF &amp;amp; ASSOCIATES, INC.&quot;, &quot;EDF (SERVICES) LIMITED&quot;, &quot;EDF 2005 GP INC.&quot;, &quot;EDF 2005 GP Inc.&quot;, &quot;EDF ASRO SRL&quot;, &quot;EDF COMMUNICATIONS LLC&quot;, &quot;EDF CONSULTANTS, INC.&quot;, &quot;EDF CONSULTING&quot;, &quot;EDF CONSULTING SA&quot;, &quot;EDF DEVELOPMENT SA&quot;, &quot;EDF DEVELOPMENT, INC.&quot;, &quot;EDF DIN UK LIMITED&quot;, &quot;EDF EN CANADA INC.&quot;, &quot;EDF EN Canada Solar Arnprior A GP Inc.&quot;, &quot;EDF EN Canada Solar Arnprior B GP Inc.&quot;, &quot;EDF EN Canada Solar Smiths Falls A GP Inc.&quot;, &quot;EDF EN Canada Solar Smiths Falls B GP Inc.&quot;, &quot;EDF EN UK LIMITED&quot;, &quot;EDF ENERGY (D1) LIMITED&quot;, &quot;EDF ENERGY (D2) LIMITED&quot;, &quot;EDF ENERGY (UK) LIMITED&quot;, &quot;EDF ENERGY 1 LIMITED&quot;, &quot;EDF ENERGY GB LIMITED&quot;, &quot;EDF ENERGY LAKE LIMITED&quot;, &quot;EDF ENERGY PLC&quot;, &quot;EDF ENERGY POWER SYSTEMS (LONDON) LIMITED&quot;, &quot;EDF ENERGY POWERCOM SYSTEMS (LONDON) LIMITED&quot;, &quot;EDF ENERGY SERVICES, LLC&quot;, &quot;EDF ENTERPRISES DW LLC&quot;, &quot;EDF ENTERPRISES GV, LLC&quot;, &quot;EDF ENTERPRISES, BX, LLC&quot;, &quot;EDF ENTERPRISES, INC.&quot;, &quot;EDF ENTERPRISES, LLC&quot;, &quot;EDF ENTERPRISES, UA, LLC&quot;, &quot;EDF HOLDINGS, LLC&quot;, &quot;EDF INC.&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (CA) LLC&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (CA), LLC&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (IL), LLC&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (NY), LLC&quot;, &quot;EDF INDUSTRIAL POWER SERVICES (OH), LLC&quot;, &quot;EDF INVESTMENTS LLC&quot;, &quot;EDF INVESTMENTS LLP&quot;, &quot;EDF INVESTMENTS SL&quot;, &quot;EDF INVESTMENTS, LLC&quot;, &quot;EDF INVESTORS, L.L.C.&quot;, &quot;EDF INVESTORS, LLC&quot;, &quot;EDF Inc.&quot;, &quot;EDF LIMITED&quot;, &quot;EDF LLC&quot;, &quot;EDF Luminus&quot;, &quot;EDF NORTH DARTMOUTH I, INC.&quot;, &quot;EDF NORTH DARTMOUTH I, LLC&quot;, &quot;EDF NORTH DARTMOUTH II, LLC&quot;, &quot;EDF NORTH DARTMOUTH, LLC&quot;, &quot;EDF POLSKA CUW SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ&quot;, &quot;EDF POWER INC.&quot;, &quot;EDF PTY LIMITED&quot;, &quot;EDF REALTY&quot;, &quot;EDF RENEWABLE LAND HOLDINGS, INC.&quot;, &quot;EDF RENEWABLE SERVICES INC.&quot;, &quot;EDF RENEWABLE SERVICES, INC.&quot;, &quot;EDF RENEWABLE SOLAR HOLDINGS, INC.&quot;, &quot;EDF RENEWABLE WINDFARM I, INC.&quot;, &quot;EDF RENEWABLE WINDFARM III, INC.&quot;, &quot;EDF RENEWABLE WINDFARM IV, INC.&quot;, &quot;EDF RENEWABLE WINDFARM V, INC.&quot;, &quot;EDF RENEWABLE WINDFARM VI, INC.&quot;, &quot;EDF Renewable Services&quot;, &quot;EDF Renewable Services Inc.&quot;, &quot;EDF Renewable Services, Inc.&quot;, &quot;EDF SERVICES LIMITED&quot;, &quot;EDF SERVICES LLC&quot;, &quot;EDF SERVICES, INC.&quot;, &quot;EDF SOLAR I, LLC&quot;, &quot;EDF SOLAR II, LLC&quot;, &quot;EDF SOLUTIONS LIMITED&quot;, &quot;EDF SRL&quot;, &quot;EDF Solutions&quot;, &quot;EDF TRADING&quot;, &quot;EDF TRADING LIMITED&quot;, &quot;EDF TRADING LTD&quot;, &quot;EDF TRADING NORTH AMERICA, LLC&quot;, &quot;EDF TRANSPORT&quot;, &quot;EDF TRANSPORT, INC.&quot;, &quot;EDF TRANSPORTS INC.&quot;, &quot;EDF VENTURES I, LIMITED PARTNERSHIP&quot;, &quot;EDF VENTURES II, LIMITED PARTNERSHIP&quot;, &quot;EDF VENTURES III, LIMITED PARTNERSHIP&quot;, &quot;EDF WATERTOWN II, LLC&quot;, &quot;EDF WATERTOWN, INC.&quot;, &quot;EDF WATERTOWN, LLC&quot;, &quot;EDF, INC.&quot;, &quot;EDF, Inc.&quot;, &quot;EDF, L.L.C.&quot;, &quot;EDF, LLC&quot;, &quot;EDF-RE TEXAS DEVELOPMENT I, LLC&quot;, &quot;EDF-RE TEXAS DEVELOPMENT II, LLC&quot;, &quot;EDF-RE TEXAS DEVELOPMENT III, LLC&quot;],
+      [4, 2, 2, 3, 7, 4, 2, 2, 2, 2, 2, 2, 17, 30, 3, 2, 2, 2, 2, 3, 4, 384, 2, 3, 2, 2, 2, 2, 2, 2, 7, 3, 2, 3, 2, 3, 2, 2, 2, 2, 2, 4, 3, 4, 2, 2, 2, 17, 2, 2, 2, 3, 5, 3, 4, 2, 3, 2, 5, 5, 5, 5, 5, 5, 4, 5, 5, 3, 2, 2, 3, 35, 4, 2, 2, 4, 4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 3, 2, 2, 3, 3, 2, 2, 2, 3, 7, 2, 17, 4, 4, 2, 4, 2, 2, 3, 3, 3, 2, 2, 2, 6, 3, 3, 4, 3, 3, 3]
+    ],
+    &quot;container&quot;: &quot;&lt;table class=\&quot;display\&quot;&gt;\n  &lt;thead&gt;\n    &lt;tr&gt;\n      &lt;th&gt; &lt;/th&gt;\n      &lt;th&gt;name&lt;/th&gt;\n      &lt;th&gt;freq&lt;/th&gt;\n    &lt;/tr&gt;\n  &lt;/thead&gt;\n&lt;/table&gt;&quot;,
+    &quot;options&quot;: {
+      &quot;columnDefs&quot;: [
+        {
+          &quot;orderable&quot;: false,
+          &quot;targets&quot;: 0
+        },
+        {
+          &quot;className&quot;: &quot;dt-right&quot;,
+          &quot;targets&quot;: 2
+        }
+      ],
+      &quot;order&quot;: [],
+      &quot;autoWidth&quot;: false
+    },
+    &quot;callback&quot;: &quot;function(table) {\nreturn table;\n}&quot;,
+    &quot;filter&quot;: &quot;none&quot;
+  },
+  &quot;evals&quot;: [&quot;callback&quot;]
+}&lt;/script&gt;
+&lt;!--/html_preserve--&gt;
+
+&lt;p&gt;Our first result is nice and give for each name the number of fuzzy match.&lt;/p&gt;
+
+&lt;h2 id=&quot;second-try-adist&quot;&gt;Second try: adist&lt;/h2&gt;
+
+&lt;p&gt;The function &lt;code class=&quot;highlighter-rouge&quot;&gt;adist&lt;/code&gt; allows to create a matrix of distance between names.&lt;/p&gt;
+
+&lt;p&gt;From the moment we have a matrix of distance, it is possible to do an hierachical clustering.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;75&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;adist&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;rownames&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;oc.dt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;hc&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;hclust&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;as.dist&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The dendogram is nice to plot, showing the similarities from a wide point of view, as we include in the same graph up to 75 names.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://london-r-dojo.github.iofigure/source/2016-05-11-Test_fuzzy_match/unnamed-chunk-7-1.png&quot; alt=&quot;plot of chunk unnamed-chunk-7&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Wed, 11 May 2016 00:00:00 +0100</pubDate>
+        <link>http://www.meetup.com/LondonR/https://london-r-dojo.github.io/2016/05/Test_fuzzy_match.html</link>
+        <guid isPermaLink="true">http://www.meetup.com/LondonR/https://london-r-dojo.github.io/2016/05/Test_fuzzy_match.html</guid>
+        
+        <category>levenshtein distance</category>
+        
+        
+        <category>Clustering</category>
+        
+      </item>
+    
+      <item>
+        <title>Creation of a website for the Coding Dojo</title>
+        <description>&lt;p&gt;It’s been a while that people come to the Rcoding Dojo and create rmarkdown which are stocked on the coding dojo repository.&lt;/p&gt;
+
+&lt;p&gt;Recently, the trio jekyll + Github + rmarkdown for blogging had became really popular, with the creation of the ‘servr::jekyll()’ function. Exemple, web sites like &lt;a href=&quot;https://github.com/yihui/knitr-jekyll&quot;&gt;Yihui repo&lt;/a&gt;, &lt;a href=&quot;http://brendanrocks.com/blogging-with-rmarkdown-knitr-jekyll/&quot;&gt;Brendan Rocks&lt;/a&gt; or &lt;a href=&quot;data-laborer.eu&quot;&gt;data-labborer.eu&lt;/a&gt; (that one is mine). In my opinion for three reasons: it’s free, allow dynamic content and when set up, it’s as simple as creating a rmarkdown.&lt;/p&gt;
+
+&lt;p&gt;All in all, these elements gave us the idea to create a website for our monthly r session, the coding dojo.
+The set up is really easy, as we just take Yihui’s script as the base of the website.&lt;/p&gt;
+
+&lt;p&gt;As far as I am aware of, this is the &lt;strong&gt;first r-based website multi-authors and totally open source&lt;/strong&gt;. True story.&lt;/p&gt;
+
+&lt;h2 id=&quot;process&quot;&gt;Process&lt;/h2&gt;
+
+&lt;p&gt;As not everybody have the time to learn jekyll or YAML, we made a process which allow participants of the coding dojo not to worry about the publishing details.&lt;/p&gt;
+
+&lt;p&gt;Basically, there is three levels of authority on this web sites:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;The participants of the coding dojo.
+    &lt;ul&gt;
+      &lt;li&gt;They create rmarkdown files and push them on github.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;The people which have jekyll on their laptop.
+    &lt;ul&gt;
+      &lt;li&gt;The role is to generate the static website when there is a new rmarkdown file.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;The admin of the github account.
+    &lt;ul&gt;
+      &lt;li&gt;Our fantastic host, Sergiusz, which orchestre the github account.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;How does it work?&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;Participants of the coding dojo create a rmarkdown file and push it on github, on the &lt;code class=&quot;highlighter-rouge&quot;&gt;_source&lt;/code&gt; folder. It is best if the script respect the criteria define in the next chapter.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Anybody with jekyll on his laptop could clone the repository, generate the updated static website and push the result on github.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Sergiusz manage the conflict which could appear and accept or reject or stop the conflicts of the update.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;include-a-post-in-the-coding-dojo-web-site&quot;&gt;Include a post in the coding dojo web site&lt;/h2&gt;
+
+&lt;p&gt;The process to include a post in the coding dojo website is very simple:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Create a rmarkdown file.&lt;/li&gt;
+  &lt;li&gt;Define the header.&lt;/li&gt;
+  &lt;li&gt;push it on the github repo in the _source folder.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;create-a-rmarkdown-file&quot;&gt;Create a rmarkdown file&lt;/h3&gt;
+
+&lt;p&gt;You know what to do. In the other case, come to the next coding dojo session.&lt;/p&gt;
+
+&lt;p&gt;Little specificity, it is better to make the script self compilable.&lt;/p&gt;
+
+&lt;p&gt;If you include data, the data should be pushed as well and with a relative path. Ex: read.csv(“.data/my_csv.csv”)&lt;/p&gt;
+
+&lt;p&gt;It is possible to include already knited rmarkdown script(in html format).
+In that case, the header of the rmarkdown file should be copied in the html file and the html should be put in _posts instead of _source.&lt;/p&gt;
+
+&lt;h3 id=&quot;define-the-header&quot;&gt;Define the header&lt;/h3&gt;
+
+&lt;p&gt;The classic header for a rmarkdown script looks like that:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;---
+title: &quot;mytitle&quot; 
+author: &quot;YCR&quot; 
+date: &quot;13 January 2016&quot; 
+output: html_document 
+---
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;With this header, rmarkdown create a html file with a title, author and date elements.&lt;/p&gt;
+
+&lt;p&gt;Now, for the creation of a post, the header should looks like that:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;---
+layout: post
+title:  &quot;my title&quot;
+categories: [jekyll, cat2, cat3, etc.]
+tags: [servr, tag2, tag3, etc.]
+---
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The only essential element here is &lt;code class=&quot;highlighter-rouge&quot;&gt;layout: post&lt;/code&gt;, which indicate to jekyll that this is a post. This allow jekyll to add the classic layouts (comments, links to the homepage, etc.)&lt;/p&gt;
+
+&lt;p&gt;Title, tags and categories are only nice to have (and are self-explainable).&lt;/p&gt;
+
+&lt;p&gt;In the case of an already knitted script, copy the header in the html script.&lt;/p&gt;
+
+&lt;h3 id=&quot;push-the-file-to-github&quot;&gt;Push the file to github&lt;/h3&gt;
+
+&lt;p&gt;When the rmarkdown file is ready and set, clone/synchronised the coding dojo repository, and push your .rmd script on the folder &lt;code class=&quot;highlighter-rouge&quot;&gt;_source&lt;/code&gt;. ( &lt;a href=&quot;https://github.com/London-R-Dojo/london-r-dojo.github.io/tree/master/_source&quot;&gt;here&lt;/a&gt;)&lt;/p&gt;
+
+&lt;p&gt;If you push an html file or a .md file, push it on the &lt;code class=&quot;highlighter-rouge&quot;&gt;_posts&lt;/code&gt; folder.&lt;/p&gt;
+
+&lt;p&gt;Then post a message on the meetup page to allow people with jekyll to generate the static website.&lt;/p&gt;
+
+&lt;h2 id=&quot;people-with-jekyll-on-their-laptop&quot;&gt;People with jekyll on their laptop&lt;/h2&gt;
+
+&lt;p&gt;Anybody can generate a static website with jekyll, but the set up may be complex when you are alone and in a rush.&lt;/p&gt;
+
+&lt;p&gt;To generate the static website, the process is the following:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Install jekyll on your laptop.&lt;/li&gt;
+  &lt;li&gt;Install r and rstudio on your laptop.&lt;/li&gt;
+  &lt;li&gt;Install the &lt;code class=&quot;highlighter-rouge&quot;&gt;servr&lt;/code&gt; package on your r session.&lt;/li&gt;
+  &lt;li&gt;Clone the github repository of the coding dojo, &lt;a href=&quot;https://github.com/London-R-Dojo/london-r-dojo.github.io&quot;&gt;here&lt;/a&gt;.&lt;/li&gt;
+  &lt;li&gt;On the root folder of the web site, run &lt;code class=&quot;highlighter-rouge&quot;&gt;servr::jekyll()&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;QA the site in &lt;code class=&quot;highlighter-rouge&quot;&gt;_site&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Push and synchronise the github repo.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For more information, the r function jekyll is better explained by the creator &lt;a href=&quot;http://yihui.name/knitr-jekyll/2014/09/jekyll-with-knitr.html&quot;&gt;Yihui Xie&lt;/a&gt; and the jekyll process and customisation by the &lt;a href=&quot;http://jekyllrb.com/&quot;&gt;jekyll documentation&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;github-administrator&quot;&gt;Github administrator&lt;/h2&gt;
+
+&lt;p&gt;I give here an insight on the role of the github account administrator, if you want to reproduce the same thing in your own dojo.&lt;/p&gt;
+
+&lt;p&gt;Basically, the job is to create a github repository, set the github account to make it a &lt;a href=&quot;https://help.github.com/articles/user-organization-and-project-pages/&quot;&gt;project page&lt;/a&gt; and manage the conflicts.&lt;/p&gt;
+
+&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;To be written with experience.&lt;/p&gt;
+</description>
+        <pubDate>Wed, 13 Jan 2016 00:00:00 +0000</pubDate>
+        <link>http://www.meetup.com/LondonR/https://london-r-dojo.github.io/2016/01/rmarkdown-intro-coding-dojo.html</link>
+        <guid isPermaLink="true">http://www.meetup.com/LondonR/https://london-r-dojo.github.io/2016/01/rmarkdown-intro-coding-dojo.html</guid>
+        
+        <category>servr</category>
+        
+        
+        <category>jekyll</category>
+        
+      </item>
+    
+  </channel>
+</rss>

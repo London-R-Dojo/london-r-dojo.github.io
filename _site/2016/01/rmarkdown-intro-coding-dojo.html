@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Creation of a website for the Coding Dojo</title>
+    <meta name="description" content="London R coding dojo blog.
+">
+
+    <link rel="stylesheet" href="https://london-r-dojo.github.io/css/main.css">
+    <link rel="canonical" href="http://www.meetup.com/LondonR/https://london-r-dojo.github.io/2016/01/rmarkdown-intro-coding-dojo.html">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="https://london-r-dojo.github.io/">London R-Dojo Blog</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="https://london-r-dojo.github.io/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Creation of a website for the Coding Dojo</h1>
+    <p class="post-meta">Jan 13, 2016</p>
+  </header>
+
+  <article class="post-content">
+    <p>It’s been a while that people come to the Rcoding Dojo and create rmarkdown which are stocked on the coding dojo repository.</p>
+
+<p>Recently, the trio jekyll + Github + rmarkdown for blogging had became really popular, with the creation of the ‘servr::jekyll()’ function. Exemple, web sites like <a href="https://github.com/yihui/knitr-jekyll">Yihui repo</a>, <a href="http://brendanrocks.com/blogging-with-rmarkdown-knitr-jekyll/">Brendan Rocks</a> or <a href="data-laborer.eu">data-labborer.eu</a> (that one is mine). In my opinion for three reasons: it’s free, allow dynamic content and when set up, it’s as simple as creating a rmarkdown.</p>
+
+<p>All in all, these elements gave us the idea to create a website for our monthly r session, the coding dojo.
+The set up is really easy, as we just take Yihui’s script as the base of the website.</p>
+
+<p>As far as I am aware of, this is the <strong>first r-based website multi-authors and totally open source</strong>. True story.</p>
+
+<h2 id="process">Process</h2>
+
+<p>As not everybody have the time to learn jekyll or YAML, we made a process which allow participants of the coding dojo not to worry about the publishing details.</p>
+
+<p>Basically, there is three levels of authority on this web sites:</p>
+
+<ul>
+  <li>The participants of the coding dojo.
+    <ul>
+      <li>They create rmarkdown files and push them on github.</li>
+    </ul>
+  </li>
+  <li>The people which have jekyll on their laptop.
+    <ul>
+      <li>The role is to generate the static website when there is a new rmarkdown file.</li>
+    </ul>
+  </li>
+  <li>The admin of the github account.
+    <ul>
+      <li>Our fantastic host, Sergiusz, which orchestre the github account.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>How does it work?</p>
+
+<ol>
+  <li>
+    <p>Participants of the coding dojo create a rmarkdown file and push it on github, on the <code class="highlighter-rouge">_source</code> folder. It is best if the script respect the criteria define in the next chapter.</p>
+  </li>
+  <li>
+    <p>Anybody with jekyll on his laptop could clone the repository, generate the updated static website and push the result on github.</p>
+  </li>
+  <li>
+    <p>Sergiusz manage the conflict which could appear and accept or reject or stop the conflicts of the update.</p>
+  </li>
+</ol>
+
+<h2 id="include-a-post-in-the-coding-dojo-web-site">Include a post in the coding dojo web site</h2>
+
+<p>The process to include a post in the coding dojo website is very simple:</p>
+
+<ul>
+  <li>Create a rmarkdown file.</li>
+  <li>Define the header.</li>
+  <li>push it on the github repo in the _source folder.</li>
+</ul>
+
+<h3 id="create-a-rmarkdown-file">Create a rmarkdown file</h3>
+
+<p>You know what to do. In the other case, come to the next coding dojo session.</p>
+
+<p>Little specificity, it is better to make the script self compilable.</p>
+
+<p>If you include data, the data should be pushed as well and with a relative path. Ex: read.csv(“.data/my_csv.csv”)</p>
+
+<p>It is possible to include already knited rmarkdown script(in html format).
+In that case, the header of the rmarkdown file should be copied in the html file and the html should be put in _posts instead of _source.</p>
+
+<h3 id="define-the-header">Define the header</h3>
+
+<p>The classic header for a rmarkdown script looks like that:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>---
+title: "mytitle" 
+author: "YCR" 
+date: "13 January 2016" 
+output: html_document 
+---
+</code></pre>
+</div>
+
+<p>With this header, rmarkdown create a html file with a title, author and date elements.</p>
+
+<p>Now, for the creation of a post, the header should looks like that:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>---
+layout: post
+title:  "my title"
+categories: [jekyll, cat2, cat3, etc.]
+tags: [servr, tag2, tag3, etc.]
+---
+</code></pre>
+</div>
+
+<p>The only essential element here is <code class="highlighter-rouge">layout: post</code>, which indicate to jekyll that this is a post. This allow jekyll to add the classic layouts (comments, links to the homepage, etc.)</p>
+
+<p>Title, tags and categories are only nice to have (and are self-explainable).</p>
+
+<p>In the case of an already knitted script, copy the header in the html script.</p>
+
+<h3 id="push-the-file-to-github">Push the file to github</h3>
+
+<p>When the rmarkdown file is ready and set, clone/synchronised the coding dojo repository, and push your .rmd script on the folder <code class="highlighter-rouge">_source</code>. ( <a href="https://github.com/London-R-Dojo/london-r-dojo.github.io/tree/master/_source">here</a>)</p>
+
+<p>If you push an html file or a .md file, push it on the <code class="highlighter-rouge">_posts</code> folder.</p>
+
+<p>Then post a message on the meetup page to allow people with jekyll to generate the static website.</p>
+
+<h2 id="people-with-jekyll-on-their-laptop">People with jekyll on their laptop</h2>
+
+<p>Anybody can generate a static website with jekyll, but the set up may be complex when you are alone and in a rush.</p>
+
+<p>To generate the static website, the process is the following:</p>
+
+<ul>
+  <li>Install jekyll on your laptop.</li>
+  <li>Install r and rstudio on your laptop.</li>
+  <li>Install the <code class="highlighter-rouge">servr</code> package on your r session.</li>
+  <li>Clone the github repository of the coding dojo, <a href="https://github.com/London-R-Dojo/london-r-dojo.github.io">here</a>.</li>
+  <li>On the root folder of the web site, run <code class="highlighter-rouge">servr::jekyll()</code>.</li>
+  <li>QA the site in <code class="highlighter-rouge">_site</code>.</li>
+  <li>Push and synchronise the github repo.</li>
+</ul>
+
+<p>For more information, the r function jekyll is better explained by the creator <a href="http://yihui.name/knitr-jekyll/2014/09/jekyll-with-knitr.html">Yihui Xie</a> and the jekyll process and customisation by the <a href="http://jekyllrb.com/">jekyll documentation</a>.</p>
+
+<h2 id="github-administrator">Github administrator</h2>
+
+<p>I give here an insight on the role of the github account administrator, if you want to reproduce the same thing in your own dojo.</p>
+
+<p>Basically, the job is to create a github repository, set the github account to make it a <a href="https://help.github.com/articles/user-organization-and-project-pages/">project page</a> and manage the conflicts.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>To be written with experience.</p>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">London R-Dojo Blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li>London R-Dojo Blog</li>
+          <li><a href="mailto:"></a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/London-R-Dojo/london-r-dojo.github.io">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">london-r-dojo.github.io</span>
+            </a>
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text">London R coding dojo blog.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
